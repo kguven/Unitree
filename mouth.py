@@ -148,7 +148,7 @@ def speak(text, device_name=None):
         try:
             print(f"[Robot TTS] Speaking: {text}")
             # TtsMaker(text, strategy). 0 might be default strategy? Example used 0.
-            robot_audio_client.TtsMaker(text, 0)
+            robot_audio_client.TtsMaker(text, 1)
             return
         except Exception as e:
             print(f"[Robot TTS] Error: {e}. Falling back to local methods.")

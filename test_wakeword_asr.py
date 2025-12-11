@@ -5,7 +5,7 @@ def main():
     print("------------------------------------------------")
     print("Habibot ASR Wake Word Test")
     print("------------------------------------------------")
-    print("Listening for: 'Hey Habibot', 'Habibot', 'Robot'")
+    print("Listening for: 'my boss'")
     print("------------------------------------------------")
 
     # Ensure Unitree ASR is enabled (usually default via env or ears.py logic)
