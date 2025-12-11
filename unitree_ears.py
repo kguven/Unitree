@@ -70,3 +70,71 @@ class UnitreeAudioStream:
         if self.sock:
             self.sock.close()
             self.sock = None
+
+class UnitreeASRSubscriber:
+    """
+    Subscribes to the Unitree ASR topic ('rt/audio_msg') to receive recognized text.
+    """
+    def __init__(self, topic="rt/audio_msg"):
+        self.topic = topic
+        self.subscriber = None
+        self.last_text = None
+        self.is_listening = False
+        
+        # Try to import SDK
+        try:
+            from unitree_sdk2py.core.channel import ChannelSubscriber
+            from unitree_sdk2py.idl.std_msgs.msg.dds_ import String_
+            self.ChannelSubscriber = ChannelSubscriber
+            self.String_ = String_
+            self.sdk_available = True
+        except ImportError:
+            print("[UnitreeASR] SDK not found. ASR disabled.")
+            self.sdk_available = False
+
+    def _handler(self, msg):
+        # deserialized msg is String_ type
+        # In python SDK, msg might be the object directly
+        try:
+            # msg.data is usually bytes or string in IDL mapping
+            import json
+            raw_data = msg.data
+            # The C++ example shows it returns a JSON string
+            print(f"[UnitreeASR] Received: {raw_data}")
+            
+            try:
+                data = json.loads(raw_data)
+                # Looking for "text" field
+                text = data.get("text", "")
+                if text:
+                    self.last_text = text
+            except json.JSONDecodeError:
+                # Fallback if not JSON
+                self.last_text = raw_data
+                
+        except Exception as e:
+            print(f"[UnitreeASR] Error handling message: {e}")
+
+    def start(self):
+        if not self.sdk_available:
+            return
+            
+        if self.subscriber:
+            return
+
+        print(f"[UnitreeASR] Subscribing to {self.topic}...")
+        self.subscriber = self.ChannelSubscriber(self.topic, self.String_)
+        self.subscriber.Init(self._handler, 10) # 10 is queue size? Checking SDK generic usage
+        self.is_listening = True
+
+    def stop(self):
+        # SDK might not have explicit stop for subscriber depending on version, 
+        # but usually we just let it be or close channel if unsupported.
+        self.is_listening = False
+        self.subscriber = None
+
+    def get_last_text(self):
+        t = self.last_text
+        self.last_text = None # Clear after reading
+        return t
+

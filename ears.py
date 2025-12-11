@@ -19,6 +19,41 @@ def listen(device_index=None):
         
         source = None
         if RUN_ON_ROBOT:
+            # Check if we should use Built-in ASR (priority)
+            # You can toggle this via env var or logic
+            USE_BUILTIN_ASR = os.getenv("USE_UNITREE_ASR", "True").lower() == "true"
+            
+            if USE_BUILTIN_ASR:
+                try:
+                    from unitree_ears import UnitreeASRSubscriber
+                    asr_sub = UnitreeASRSubscriber()
+                    asr_sub.start()
+                    
+                    print("[Ears] Waiting for Unitree ASR...")
+                    start_wait = time.time()
+                    
+                    # Wait for text loop
+                    timeout = 10
+                    elapsed = 0
+                    while elapsed < timeout:
+                        text = asr_sub.get_last_text()
+                        if text:
+                            print(f"[Ears] ASR Received: {text}")
+                            asr_sub.stop()
+                            return text
+                        
+                        time.sleep(0.1)
+                        elapsed = time.time() - start_wait
+                        
+                    print("[Ears] ASR Timeout.")
+                    asr_sub.stop()
+                    return None
+                    
+                except ImportError:
+                     print("[Ears] Unitree ASR not found. Falling back to audio stream.")
+                except Exception as e:
+                     print(f"[Ears] Error in ASR: {e}")
+
             try:
                 from unitree_ears import UnitreeAudioSource
                 source = UnitreeAudioSource()
