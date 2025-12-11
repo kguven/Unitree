@@ -9,7 +9,7 @@ api_key = os.getenv("GEMINI_API_KEY")
 
 # URL for Gemini 1.5 Flash (checking publicly available endpoints)
 # Using the v1beta API which is standard for Gemini
-MODEL_NAME = "gemini-1.5-flash"
+MODEL_NAME = "gemini-2.5-flash"
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent"
 
 SYSTEM_INSTRUCTION = "You are Habibot, a witty, charming Lebanese robot. You speak in English but use some Lebanese Arabic slang (like 'Yalla', 'Habibi', 'Wallah') naturally. You are helpful but have a fun personality. Keep your responses concise and conversational, suitable for a spoken response."
