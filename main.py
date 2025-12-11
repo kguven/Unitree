@@ -58,8 +58,8 @@ def main():
                 
                 if text:
                     text_lower = text.lower()
-                    # Check for keywords - Only 'hey my bot' (or close variations if needed)
-                    if "hey my bot" in text_lower or "hey, my bot" in text_lower:
+                    # Check for keywords - Only 'my boss'
+                    if "my boss" in text_lower:
                         print(f"Wake word detected in: '{text}'")
                         wake_word_detected = True
                         mouth.speak("Yeah?", device_name=speaker_name)
