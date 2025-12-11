@@ -122,16 +122,16 @@ class UnitreeASRSubscriber:
                     return
                 
                 # Check is_final
-                is_final = data.get("is_final", False)
-                if not is_final:
-                    # Ignore intermediate results
-                    print(f"[UnitreeASR] Ignoring intermediate: {data.get('text', '')}")
-                    return
+                # is_final = data.get("is_final", False)
+                # if not is_final:
+                #     # Ignore intermediate results
+                #     print(f"[UnitreeASR] Ignoring intermediate: {data.get('text', '')}")
+                #     return
 
                 # Looking for "text" field
                 text = data.get("text", "")
                 if text:
-                    print(f"[UnitreeASR] New Text ({lang}, Final): {text}")
+                    print(f"[UnitreeASR] New Text ({lang}): {text}")
                     self.last_text = text
             except json.JSONDecodeError:
                 # Fallback if not JSON
