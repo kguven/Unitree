@@ -20,7 +20,7 @@ def main():
                 text_lower = text.lower()
                 print(f"--> Heard: '{text}'")
                 
-                if "habibot" in text_lower:
+                if "hey my bot" in text_lower or "hey, my bot" in text_lower:
                     print(">>> WAKE WORD DETECTED! <<<")
                 else:
                     print("... ignored (no keyword)")
