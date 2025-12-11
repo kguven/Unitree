@@ -118,14 +118,14 @@ class UnitreeASRSubscriber:
                 # User example: "en - US", logs show "<|en|>"
                 lang = data.get("language", "")
                 if "en" not in lang.lower():
-                    # print(f"[UnitreeASR] Ignoring non-English: {lang}")
+                    print(f"[UnitreeASR] Ignoring non-English: {lang}")
                     return
                 
                 # Check is_final
                 is_final = data.get("is_final", False)
                 if not is_final:
                     # Ignore intermediate results
-                    # print(f"[UnitreeASR] Ignoring intermediate: {data.get('text', '')}")
+                    print(f"[UnitreeASR] Ignoring intermediate: {data.get('text', '')}")
                     return
 
                 # Looking for "text" field
