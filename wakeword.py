@@ -11,6 +11,9 @@ import struct
 
 class WakeWordEngine:
     def __init__(self, access_key, keyword_path, device_index=None):
+        self.porcupine = None
+        self.recorder = None
+        
         if not PORCUPINE_AVAILABLE:
             raise RuntimeError("Porcupine library is not available on this system.")
 
