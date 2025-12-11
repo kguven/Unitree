@@ -113,11 +113,18 @@ class UnitreeASRSubscriber:
                     return # Duplicate message
                 
                 self.last_index = idx
-                
+
+                # Check language (Filter for English)
+                # User example: "en - US", logs show "<|en|>"
+                lang = data.get("language", "")
+                if "en" not in lang.lower():
+                    # print(f"[UnitreeASR] Ignoring non-English: {lang}")
+                    return
+
                 # Looking for "text" field
                 text = data.get("text", "")
                 if text:
-                    print(f"[UnitreeASR] New Text: {text}")
+                    print(f"[UnitreeASR] New Text ({lang}): {text}")
                     self.last_text = text
             except json.JSONDecodeError:
                 # Fallback if not JSON
