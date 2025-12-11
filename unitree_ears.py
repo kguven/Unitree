@@ -79,6 +79,7 @@ class UnitreeASRSubscriber:
         self.topic = topic
         self.subscriber = None
         self.last_text = None
+        self.last_index = -1 # Track message index to avoid duplicates
         self.is_listening = False
         
         # Try to import SDK
@@ -101,13 +102,22 @@ class UnitreeASRSubscriber:
             import json
             raw_data = msg.data
             # The C++ example shows it returns a JSON string
-            print(f"[UnitreeASR] Received: {raw_data}")
+            # print(f"[UnitreeASR] Received: {raw_data}") # Debug logging reduced
             
             try:
                 data = json.loads(raw_data)
+                
+                # Check index to avoid duplicates
+                idx = data.get("index", -1)
+                if idx != -1 and idx == self.last_index:
+                    return # Duplicate message
+                
+                self.last_index = idx
+                
                 # Looking for "text" field
                 text = data.get("text", "")
                 if text:
+                    print(f"[UnitreeASR] New Text: {text}")
                     self.last_text = text
             except json.JSONDecodeError:
                 # Fallback if not JSON

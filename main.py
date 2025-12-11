@@ -41,36 +41,42 @@ def main():
             speaker_name = None
 
     # Initialize Wake Word Engine
-    ww_engine = None
-    if porcupine_key:
-        try:
-            ww_engine = WakeWordEngine(
-                access_key=porcupine_key,
-                keyword_path=wake_word_path,
-                device_index=mic_index
-            )
-        except Exception as e:
-            print(f"Failed to initialize WakeWordEngine: {e}")
-            print("Continuing without wake word (always listening mode)...")
-    else:
-        print("Warning: PORCUPINE_ACCESS_KEY not found. Wake word disabled.")
-
-    mouth.speak("System ready.", device_name=speaker_name)
+    # We are using ASR-based wake word now. "Hey Habibot" or "Habibot"
+    print("\n[Init] Using ASR-based Wake Word: 'Hey Habibot'")
+    mouth.speak("System ready. Say Hey Habibot.", device_name=speaker_name)
     
     while True:
         try:
-            # 0. Wait for Wake Word (if enabled)
-            if ww_engine:
-                print("\n[State] Waiting for wake word...")
-                if not ww_engine.wait_for_wake_word():
-                    continue # Loop back if false (e.g. timeout or interrupt)
+            # 0. Wait for Wake Word (ASR Loop)
+            print("\n[State] Waiting for 'Hey Habibot'...")
+            
+            # Listen indefinitely until keyword match
+            wake_word_detected = False
+            while not wake_word_detected:
+                # listen() uses Unitree ASR if available (configured in ears.py/env)
+                text = ears.listen()
                 
-                # Wake word detected!
-                mouth.speak("Yeah, I'm listening.", device_name=speaker_name)
+                if text:
+                    text_lower = text.lower()
+                    # Check for keywords
+                    if "habibot" in text_lower or "robot" in text_lower or "hey" in text_lower:
+                        print(f"Wake word detected in: '{text}'")
+                        wake_word_detected = True
+                        mouth.speak("Yeah?", device_name=speaker_name)
+                    else:
+                        print(f"Ignoring: '{text}'")
+                
+                # Small sleep to prevent tight loop if listen returns None immediately
+                time.sleep(0.1)
 
-            # 1. Listen
-            print("\n[State] Listening...")
-            user_input = ears.listen(device_index=mic_index)
+            # 1. Listen for Command
+            print("\n[State] Listening for command...")
+            # We can reuse ears.listen() or just continue if the wake word phrase contained the command
+            # For natural flow, let's listen again for the actual command explicitly
+            # or check if the wake word sentence had more content.
+            
+            # Simple approach: Listen again
+            user_input = ears.listen()
             
             if user_input:
                 # Check for exit command
