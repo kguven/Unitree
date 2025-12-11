@@ -1,10 +1,19 @@
-import pvporcupine
-from pvrecorder import PvRecorder
+try:
+    import pvporcupine
+    from pvrecorder import PvRecorder
+    PORCUPINE_AVAILABLE = True
+except (ImportError, OSError, RuntimeError, NotImplementedError) as e:
+    print(f"Warning: Porcupine not available (Error: {e}). Wake word will be disabled.")
+    PORCUPINE_AVAILABLE = False
+
 import os
 import struct
 
 class WakeWordEngine:
     def __init__(self, access_key, keyword_path, device_index=None):
+        if not PORCUPINE_AVAILABLE:
+            raise RuntimeError("Porcupine library is not available on this system.")
+
         self.access_key = access_key
         self.keyword_path = keyword_path
         self.device_index = int(device_index) if device_index is not None else -1
