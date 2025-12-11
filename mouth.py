@@ -27,15 +27,23 @@ if RUN_ON_ROBOT:
         from unitree_sdk2py.core.channel import ChannelFactoryInitialize
         from unitree_sdk2py.g1.audio.g1_audio_client import AudioClient
         
-        ChannelFactoryInitialize(0, ROBOT_IFACE)
+        try:
+            ChannelFactoryInitialize(0, ROBOT_IFACE)
+            print("[Robot] ChannelFactory initialized.")
+        except Exception as e:
+            # ChannelFactory might already be initialized by unitree_ears.py
+            print(f"[Robot] ChannelFactory init (may already be initialized): {e}")
+        
         robot_audio_client = AudioClient()
         robot_audio_client.SetTimeout(10.0)
         robot_audio_client.Init()
         print("[Robot] AudioClient initialized successfully.")
     except ImportError:
         print("[Robot] Error: unitree_sdk2py not found. Please install the SDK.")
+        robot_audio_client = None
     except Exception as e:
         print(f"[Robot] Error initializing AudioClient: {e}")
+        robot_audio_client = None
 
 # Initialize offline TTS engine globally to avoid threading issues
 try:
