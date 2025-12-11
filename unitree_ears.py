@@ -83,9 +83,10 @@ class UnitreeASRSubscriber:
         
         # Try to import SDK
         try:
-            from unitree_sdk2py.core.channel import ChannelSubscriber
+            from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
             from unitree_sdk2py.idl.std_msgs.msg.dds_ import String_
             self.ChannelSubscriber = ChannelSubscriber
+            self.ChannelFactoryInitialize = ChannelFactoryInitialize
             self.String_ = String_
             self.sdk_available = True
         except ImportError:
@@ -122,10 +123,27 @@ class UnitreeASRSubscriber:
         if self.subscriber:
             return
 
+        # Ensure ChannelFactory is initialized
+        # We need the interface from env or default to eth0
+        import os
+        ROBOT_IFACE = os.getenv("ROBOT_NETWORK_INTERFACE", "eth0")
+        try:
+            # Domain ID 0 is default
+            self.ChannelFactoryInitialize(0, ROBOT_IFACE)
+            print(f"[UnitreeASR] Initialized ChannelFactory on {ROBOT_IFACE}")
+        except Exception as e:
+            # It might already be initialized, which is fine usually, or throw error if repeated.
+            # We catch generic exception just in case specific "AlreadyInit" isn't exposed clearly.
+            print(f"[UnitreeASR] Info: ChannelFactory init (may be already initialized): {e}")
+
         print(f"[UnitreeASR] Subscribing to {self.topic}...")
-        self.subscriber = self.ChannelSubscriber(self.topic, self.String_)
-        self.subscriber.Init(self._handler, 10) # 10 is queue size? Checking SDK generic usage
-        self.is_listening = True
+        try:
+            self.subscriber = self.ChannelSubscriber(self.topic, self.String_)
+            self.subscriber.Init(self._handler, 10) 
+            self.is_listening = True
+        except Exception as e:
+             print(f"[UnitreeASR] Error initializing subscriber: {e}")
+             raise e
 
     def stop(self):
         # SDK might not have explicit stop for subscriber depending on version, 
