@@ -36,7 +36,7 @@ def main():
     
     # TtsMaker(text, strategy)
     # Strategy 0 appears to be the standard usage for G1
-    ret = client.TtsMaker(text, 0)
+    ret = client.TtsMaker(text, 1)
     
     print(f"Command sent. Return code: {ret}")
 
