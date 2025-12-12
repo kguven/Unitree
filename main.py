@@ -22,17 +22,16 @@ def main():
     asr_ready = ears.initialize_asr()
     
     if asr_ready:
-        print("[Init] ASR initialized successfully. Wake word: 'My Boss'")
+        print("[Init] ASR initialized successfully. Wake word: 'Robot'")
     else:
         print("[Init] ASR not available. Using fallback audio input.")
     
     # Initial greeting
-    mouth.speak("System ready. Say My Boss to activate me.")
+    mouth.speak("System ready. Say Robot to activate me.")
     wake_word_detected = False
     while True:
         try:
             # 1. Wait for Wake Word
-            print("\n[State] Waiting for wake word 'My Boss'...")
             
             #wake_word_detected = False
             while not wake_word_detected:
