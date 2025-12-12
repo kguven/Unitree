@@ -57,8 +57,16 @@ def main():
                 print("[State] No command received. Returning to wake word.")
                 continue
             
-            # Check for exit command
-            if user_input.lower() in ["exit", "quit", "stop", "bye", "goodbye"]:
+            # Check for stop command (return to wake word mode)
+            user_input_lower = user_input.lower()
+            stop_phrases = ["stop answering", "stop", "be quiet", "shut up", "silence", "enough"]
+            if any(phrase in user_input_lower for phrase in stop_phrases):
+                print("[State] Stop command detected. Returning to wake word mode.")
+                mouth.speak("Okay, I'll be quiet. Say My Boss when you need me.")
+                continue
+            
+            # Check for exit command (completely exit the program)
+            if user_input_lower in ["exit", "quit", "bye", "goodbye"]:
                 mouth.speak("Goodbye!")
                 break
 
