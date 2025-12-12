@@ -5,8 +5,8 @@ After=network.target sound.target
 [Service]
 Type=simple
 User=unitree
-WorkingDirectory=/home/Unitree
-ExecStart=/usr/bin/python3 /home/Unitree/main.py
+WorkingDirectory=/home/unitree/Unitree
+ExecStart=/usr/bin/python3 /home/unitree/Unitree/main.py
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
