@@ -28,19 +28,19 @@ def main():
     
     # Initial greeting
     mouth.speak("System ready. Say My Boss to activate me.")
-    
+    wake_word_detected = False
     while True:
         try:
             # 1. Wait for Wake Word
             print("\n[State] Waiting for wake word 'My Boss'...")
             
-            wake_word_detected = False
+            #wake_word_detected = False
             while not wake_word_detected:
                 text = ears.listen()
                 
                 if text:
                     text_lower = text.lower()
-                    if "my boss" in text_lower:
+                    if "robot" in text_lower:
                         print(f"[Wake] Detected in: '{text}'")
                         wake_word_detected = True
                         mouth.speak("Habibot is listening.")
@@ -59,10 +59,11 @@ def main():
             
             # Check for stop command (return to wake word mode)
             user_input_lower = user_input.lower()
-            stop_phrases = ["stop answering", "stop", "be quiet", "shut up", "silence", "enough"]
+            stop_phrases = ["goodbye"]
             if any(phrase in user_input_lower for phrase in stop_phrases):
                 print("[State] Stop command detected. Returning to wake word mode.")
                 mouth.speak("Okay, I'll be quiet. Say My Boss when you need me.")
+                wake_word_detected = False
                 continue
             
             # Check for exit command (completely exit the program)
