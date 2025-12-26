@@ -1,0 +1,62 @@
+Getting Started with Unitree G1 using Unitree MuJoCo
+
+
+****************************
+Software
+
+This assumes that you are using Ubuntu 20.04 and have installed the necessary C++ software by following 
+https://github.com/unitreerobotics/unitree_mujoco
+
+
+**************************
+Running for the first time
+1)
+Make a copy of this folder
+
+2)
+Open a terminal, say terminal 1
+Navigate to the folder
+
+3) 
+cmake .
+
+
+***************************
+
+Now we will run the simulator
+
+4) IN the folder unitree_mujoco/simulate 
+drop the config.yaml file 
+
+- sets G1
+- set elastic band = 1
+
+
+5)
+Open another terminal, say terminal 2 and navigate to the folder unitree_mujoco/simulate/build 
+./unitree_mujoco 
+
+
+********************
+
+Now we will run the controller
+6) Go to terminal 1 
+
+
+make
+./stand_g1
+
+We will modify two of the reference angles
+
+NOTE: Alternately, put these lines in another file, say run_stand_g1
+
+chmod +x run_stand_g1
+./run_stand_g1
+
+
+You can quit the controller by pressing ctrl+c and re-running it as many times. You dont need to start the simulator again.
+
+
+^^^^^^^^^^^^^^^^^^^^
+
+

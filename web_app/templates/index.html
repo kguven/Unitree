@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habibot Control</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="status-item">
+            <i class="fas fa-robot"></i> Habibot
+        </div>
+        <div class="status-item">
+            Battery: <span id="status-batt" class="status-value">--%</span>
+        </div>
+        <div class="status-item">
+            WiFi: <span id="status-conn" class="status-value">Connected</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Button 1: The Giver -->
+        <button id="btn-1" class="cmd-btn btn-green">
+            <i class="fas fa-hand-holding-heart"></i>
+            <span>The Giver</span>
+        </button>
+
+        <!-- Button 2: Robot Sings -->
+        <button id="btn-2" class="cmd-btn btn-purple">
+            <i class="fas fa-music"></i>
+            <span>Robot Sings</span>
+        </button>
+
+        <!-- Button 3: Stand-Up Comedy -->
+        <button id="btn-3" class="cmd-btn btn-yellow">
+            <i class="fas fa-laugh-squint"></i>
+            <span>Stand-Up Comedy</span>
+        </button>
+
+        <!-- Button 4: Living Statue -->
+        <button id="btn-4" class="cmd-btn btn-red">
+            <i class="fas fa-ghost"></i>
+            <span>Living Statue</span>
+        </button>
+
+        <!-- Button 5: Fortune Teller -->
+        <button id="btn-5" class="cmd-btn btn-blue">
+            <i class="fas fa-crystal-ball"></i>
+            <span>Fortune Teller</span>
+        </button>
+
+        <!-- Button 6: Selfie Mode -->
+        <button id="btn-6" class="cmd-btn btn-cyan">
+            <i class="fas fa-camera"></i>
+            <span>Selfie Mode</span>
+        </button>
+
+        <!-- Button 7: Rock-Paper-Scissors -->
+        <button id="btn-7" class="cmd-btn btn-orange">
+            <i class="fas fa-hand-rock"></i>
+            <span>R-P-S Game</span>
+        </button>
+
+        <!-- Button 8: The Butler -->
+        <button id="btn-8" class="cmd-btn btn-grey">
+            <i class="fas fa-concierge-bell"></i>
+            <span>The Butler</span>
+        </button>
+
+        <!-- Button 9: Wedding Toast -->
+        <button id="btn-9" class="cmd-btn btn-pink">
+            <i class="fas fa-glass-cheers"></i>
+            <span>Wedding Toast</span>
+        </button>
+
+        <!-- Button 10: Chat Toggle -->
+        <button id="btn-10" class="cmd-btn btn-toggle inactive">
+            <i class="fas fa-microphone-slash"></i>
+            <span>Gemini Chat: OFF</span>
+        </button>
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

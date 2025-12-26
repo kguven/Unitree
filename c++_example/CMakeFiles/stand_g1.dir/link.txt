@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/stand_g1.dir/stand_g1.cpp.o -o stand_g1   -L/opt/unitree_robotics/lib  -Wl,-rpath,/opt/unitree_robotics/lib /opt/unitree_robotics/lib/libunitree_sdk2.a -lddsc -lddscxx 

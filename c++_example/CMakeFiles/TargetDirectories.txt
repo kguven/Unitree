@@ -1,0 +1,3 @@
+/home/kemal/Downloads/template_g1 (2)/CMakeFiles/stand_g1.dir
+/home/kemal/Downloads/template_g1 (2)/CMakeFiles/edit_cache.dir
+/home/kemal/Downloads/template_g1 (2)/CMakeFiles/rebuild_cache.dir

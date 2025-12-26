@@ -1,0 +1,10 @@
+SpeechRecognition
+google-generativeai
+edge-tts
+pygame
+python-dotenv
+asyncio
+pvporcupine
+pvrecorder
+pyttsx3
+flask
