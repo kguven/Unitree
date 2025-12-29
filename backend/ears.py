@@ -1,7 +1,7 @@
 import time
 import os
 from dotenv import load_dotenv
-from unitree_ears import UnitreeASRSubscriber
+from . import unitree_ears
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ def initialize_asr():
         return True
     
     try:
-        _asr_subscriber = UnitreeASRSubscriber()
+        _asr_subscriber = unitree_ears.UnitreeASRSubscriber()
         _asr_subscriber.start()
         _asr_initialized = True
         print("[Ears] ASR initialized successfully.")
