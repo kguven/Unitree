@@ -9,6 +9,7 @@ from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitial
 from unitree_sdk2py.g1.arm.g1_arm_action_client import G1ArmActionClient
 from unitree_sdk2py.g1.arm.g1_arm_action_client import action_map
 from dataclasses import dataclass
+from . import custom
 
 
 class RobotController:
@@ -172,6 +173,9 @@ class RobotController:
         mouth.speak(joke)
         print("[MOTION] Shrug Shoulders")
         print("[AUDIO] Ba Dum Tss")
+        custom = Custom()
+        custom.Init()
+        custom.Start()
 
     def action_living_statue(self):
         print("[MOTION] FREEZE MODE (Damping)")
