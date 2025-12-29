@@ -5,6 +5,11 @@ import os
 from . import ears
 from . import mouth
 from . import brain
+from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
+from unitree_sdk2py.g1.arm.g1_arm_action_client import G1ArmActionClient
+from unitree_sdk2py.g1.arm.g1_arm_action_client import action_map
+from dataclasses import dataclass
+
 
 class RobotController:
     def __init__(self):
@@ -144,6 +149,16 @@ class RobotController:
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
         print("[MOTION] Extending arm again...")
+
+        try:
+            ChannelFactoryInitialize(0, "eth0")
+            armAction_client = G1ArmActionClient()  
+            armAction_client.SetTimeout(10.0)
+            armAction_client.Init()
+            armAction_client.ExecuteAction(action_map.get("two-hand kiss"))
+        except Exception as e:
+            print(f"Arm action failed: {e}")
+        time.sleep(1)
 
     def action_robot_sings(self):
         mouth.speak("This next song is dedicated to the beautiful couple! Yalla!")
