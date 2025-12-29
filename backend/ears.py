@@ -42,6 +42,7 @@ def listen(timeout=10):
     
     if not _asr_subscriber:
         print("[Ears] ERROR: ASR not initialized. Call initialize_asr() first.")
+        time.sleep(5)
         return None
     
     start_wait = time.time()
