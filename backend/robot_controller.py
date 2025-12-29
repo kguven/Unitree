@@ -173,7 +173,7 @@ class RobotController:
         mouth.speak(joke)
         print("[MOTION] Shrug Shoulders")
         print("[AUDIO] Ba Dum Tss")
-        custom = Custom()
+        custom = custom.Custom()
         custom.Init()
         custom.Start()
 
