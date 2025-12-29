@@ -173,11 +173,7 @@ class RobotController:
         mouth.speak(joke)
         print("[MOTION] Shrug Shoulders")
         print("[AUDIO] Ba Dum Tss")
-        if len(sys.argv)>1:
-            ChannelFactoryInitialize(0, "eth0")
-        else:
-            print("Forcing Simulation Settings: Domain 0, Interface 'lo'")
-            ChannelFactoryInitialize(0, "lo")
+        ChannelFactoryInitialize(0, "eth0")
         custom_runner = custom.Custom()
         custom_runner.Init()
         custom_runner.Start()
