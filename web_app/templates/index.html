@@ -81,7 +81,36 @@
             <i class="fas fa-microphone-slash"></i>
             <span>Gemini Chat: OFF</span>
         </button>
+
+        <!-- Button 11: Photo Mode Toggle -->
+        <button id="btn-11" class="cmd-btn btn-toggle inactive">
+            <i class="fas fa-camera-retro"></i>
+            <span>Photo Upload: OFF</span>
+        </button>
+
+        <!-- Button 12: Settings -->
+        <button id="btn-12" class="cmd-btn btn-grey">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </button>
     </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Photo Upload Settings</h2>
+            <div class="form-group">
+                <label for="photo-url">Upload URL:</label>
+                <input type="text" id="photo-url" placeholder="http://example.com/upload">
+            </div>
+            <div class="form-group">
+                <label for="photo-interval">Interval (seconds):</label>
+                <input type="number" id="photo-interval" min="10" value="60">
+            </div>
+            <button id="save-settings" class="btn-green">Save Settings</button>
+        </div>
+    </div>
 
     <script src="/static/script.js"></script>
 </body>

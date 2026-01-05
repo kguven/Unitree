@@ -29,3 +29,6 @@ Thumbs.db
 temp_*.txt
 response.mp3
 temp_speech.mp3
+
+# External Dependencies
+inspire_hand_ws/

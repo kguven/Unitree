@@ -8,3 +8,4 @@ pvporcupine
 pvrecorder
 pyttsx3
 flask
+requests

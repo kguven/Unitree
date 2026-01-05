@@ -22,6 +22,27 @@ def toggle_chat():
     active = data.get('active', False)
     robot.set_chat_mode(active)
     return jsonify({"success": True, "active": active})
+    
+@app.route('/api/photo_mode', methods=['POST'])
+def photo_mode():
+    data = request.json
+    active = data.get('active', False)
+    robot.set_photo_mode(active)
+    return jsonify({"success": True, "active": active})
+
+@app.route('/api/photo_settings', methods=['GET', 'POST'])
+def photo_settings():
+    if request.method == 'POST':
+        data = request.json
+        interval = data.get('interval', 60)
+        url = data.get('url', "")
+        robot.update_photo_settings(interval, url)
+        return jsonify({"success": True})
+    else:
+        return jsonify({
+            "interval": robot.photo_interval,
+            "url": robot.photo_url
+        })
 
 @app.route('/api/trigger_action', methods=['POST'])
 def trigger_action():
@@ -40,7 +61,8 @@ def status():
     return jsonify({
         "connection": "ok",
         "battery": 87, 
-        "chat_active": robot.chat_active
+        "chat_active": robot.chat_active,
+        "photo_active": robot.photo_active
     })
 
 if __name__ == '__main__':

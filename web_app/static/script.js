@@ -4,6 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusConn = document.getElementById('status-conn');
     const statusBatt = document.getElementById('status-batt');
     const btnToggle = document.getElementById('btn-10');
+    const btnPhoto = document.getElementById('btn-11');
+    const btnSettings = document.getElementById('btn-12');
+
+    // Modal Elements
+    const modal = document.getElementById("settings-modal");
+    const span = document.getElementsByClassName("close")[0];
+    const saveSettingsBtn = document.getElementById("save-settings");
+    const photoUrlInput = document.getElementById("photo-url");
+    const photoIntervalInput = document.getElementById("photo-interval");
 
     // Button click handler
     document.querySelectorAll('.cmd-btn').forEach(btn => {
@@ -18,20 +27,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleChat(btn);
                 return;
             }
+            if (btnId === 'btn-11') {
+                togglePhoto(btn);
+                return;
+            }
+            if (btnId === 'btn-12') {
+                openSettings();
+                return;
+            }
 
             // Visual feedback
             btn.classList.add('processing');
-            
+
             try {
                 const response = await fetch('/api/trigger_action', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ button_id: btnId })
                 });
-                
+
                 const result = await response.json();
                 console.log('Result:', result);
-                
+
                 if (result.success) {
                     // Success animation or feedback
                 } else {
@@ -51,10 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function toggleChat(btn) {
         const isCurrentlyActive = btn.classList.contains('active');
         const newState = !isCurrentlyActive;
-        
+
         // Optimistic UI update
         updateToggleUI(btn, newState);
-        
+
         try {
             const response = await fetch('/api/toggle_chat', {
                 method: 'POST',
@@ -62,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ active: newState })
             });
             const result = await response.json();
-            
+
             if (!result.success) {
                 // Revert if failed
                 updateToggleUI(btn, isCurrentlyActive);
@@ -73,6 +90,84 @@ document.addEventListener('DOMContentLoaded', () => {
             updateToggleUI(btn, isCurrentlyActive);
         }
     }
+
+    // Specific logic for Photo Toggle (Button 11)
+    async function togglePhoto(btn) {
+        const isCurrentlyActive = btn.classList.contains('active');
+        const newState = !isCurrentlyActive;
+
+        updatePhotoUI(btn, newState);
+
+        try {
+            const response = await fetch('/api/photo_mode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: newState })
+            });
+            const result = await response.json();
+            if (!result.success) {
+                updatePhotoUI(btn, isCurrentlyActive);
+                alert('Failed to toggle photo mode');
+            }
+        } catch (err) {
+            console.error('Network Error:', err);
+            updatePhotoUI(btn, isCurrentlyActive);
+        }
+    }
+
+    function updatePhotoUI(btn, active) {
+        if (active) {
+            btn.classList.add('active');
+            btn.classList.remove('inactive');
+            btn.querySelector('span').innerText = "Photo Upload: ON";
+            btn.querySelector('i').className = "fas fa-camera";
+        } else {
+            btn.classList.add('inactive');
+            btn.classList.remove('active');
+            btn.querySelector('span').innerText = "Photo Upload: OFF";
+            btn.querySelector('i').className = "fas fa-camera-retro";
+        }
+    }
+
+    // Settings Modal Logic
+    async function openSettings() {
+        modal.style.display = "block";
+        // Fetch current settings
+        try {
+            const res = await fetch('/api/photo_settings');
+            const data = await res.json();
+            photoUrlInput.value = data.url;
+            photoIntervalInput.value = data.interval;
+        } catch (e) { console.error(e); }
+    }
+
+    span.onclick = function () {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    saveSettingsBtn.onclick = async function () {
+        const url = photoUrlInput.value;
+        const interval = photoIntervalInput.value;
+
+        try {
+            await fetch('/api/photo_settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url, interval: interval })
+            });
+            modal.style.display = "none";
+            alert("Settings saved!");
+        } catch (e) {
+            alert("Failed to save settings");
+        }
+    }
+
 
     function updateToggleUI(btn, active) {
         if (active) {
@@ -95,14 +190,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // For now, we assume if fetch works, we are connected.
             const response = await fetch('/api/status');
             const data = await response.json();
-            
+
             statusConn.classList.remove('disconnected');
             statusConn.innerText = "Connected";
-            
+
             if (data.battery) {
                 statusBatt.innerText = `Battery: ${data.battery}%`;
             }
-            
+
             // Sync toggle button state if needed (in case changed from elsewhere)
             if (data.chat_active !== undefined) {
                 const isActive = btnToggle.classList.contains('active');
@@ -110,7 +205,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateToggleUI(btnToggle, data.chat_active);
                 }
             }
-            
+            if (data.photo_active !== undefined) {
+                const isActive = btnPhoto.classList.contains('active');
+                if (isActive !== data.photo_active) {
+                    updatePhotoUI(btnPhoto, data.photo_active);
+                }
+            }
+
         } catch (err) {
             statusConn.classList.add('disconnected');
             statusConn.innerText = "Disconnected";
