@@ -544,7 +544,7 @@ class RobotController:
             
             # Write Command
             low_cmd.crc = crc_util.Crc(low_cmd)
-            arm_sdk_publisher.Write(low_cmd)
+            self.arm_sdk_publisher.Write(low_cmd)
             
             # Sleep remainder
             elapsed = time.time() - start_loop
