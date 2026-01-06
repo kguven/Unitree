@@ -567,29 +567,20 @@ class RobotController:
         
         target = [None] * 17
         
-        # Right Arm Extend (Custom)
-        # Right Arm starts at index 7
-        target[7] = -0.3 # Lift arm slightly (Forward)
-        target[10] = 0.3 # Elbow Extend (Push)
-        
         # Open Hand
         self.hands.open_hand('r')
-        
-        # Faster Move (1.0s)
-        self._move_arm_safe(target, duration=1.0)
-        time.sleep(5)
-        target[7] = 1 # Lift arm slightly (Forward)
-        self._move_arm_safe(target, duration=2.0)
-        time.sleep(5)
+        # Right Arm Extend (Custom)
+        # Right Arm starts at index 7
         target[7] = -1 # Lift arm slightly (Forward)
-        self._move_arm_safe(target, duration=2.0)
-        time.sleep(5)
-        target[3] = 1 # Lift arm slightly (Forward)
-        self._move_arm_safe(target, duration=2.0)
-        time.sleep(5)
-        target[3] = -1 # Lift arm slightly (Forward)
-        self._move_arm_safe(target, duration=2.0)
-        time.sleep(5)
+        target[10] = 0.3 # Elbow Extend (Push)
+    
+        # Faster Move (1.0s)
+        self._move_arm_safe(target, duration=3.0, 5.0)
+        target[7] = 1 # Lift arm slightly (Forward)
+        target[10] = 0 # Elbow Extend (Push)
+    
+        # Faster Move (1.0s)
+        self._move_arm_safe(target, duration=3.0, 5.0)
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
         
