@@ -569,8 +569,8 @@ class RobotController:
         
         # Right Arm Extend (Custom)
         # Right Arm starts at index 7
-        target[7] = -1.0 # Lift arm
-        target[10] = 1.0 # Elbow bend
+        target[7] = -0.3 # Lift arm slightly (Forward)
+        target[10] = 0.3 # Elbow Extend (Push)
         
         # Open Hand
         self.hands.open_hand('r')
