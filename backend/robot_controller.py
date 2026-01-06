@@ -467,7 +467,7 @@ class RobotController:
         # Capture Start Configuration
         start_config = []
         for joint in arm_joints:
-             start_config.append(state_container["low_state"].motor_state[joint].q)
+             start_config.append(self.state_container["low_state"].motor_state[joint].q)
 
         # Handle 'None' in target_config (Station Keeping)
         final_target = []
