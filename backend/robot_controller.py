@@ -167,6 +167,10 @@ class HandController:
 
 
 class RobotController:
+from . import camera # Import Camera
+
+    # ... (skipping to __init__)
+
     def __init__(self):
         # Default to TRUE to match Phase 1 behavior (always on by default)
         self.chat_active = True 
@@ -194,151 +198,65 @@ class RobotController:
         # Initial State: Open Hands?
         self.hands.open_hand()
 
+        # Camera Controller
+        self.camera = camera.RealSenseCamera()
+
         # Photo Upload State
         self.photo_active = False
         self.photo_interval = 60 # seconds
         self.photo_url = "http://localhost:5000/upload" # Default URL
         self.photo_thread = None
 
-    def _voice_loop(self):
-        print("Voice loop started...")
-        
-        # Consistent State Logic from Phase 1
-        # Loop: Wait for Wake Word -> Speak confirmation -> Listen for Command -> Think -> Speak
-        
-        while self.running:
-            if not self.chat_active:
-                time.sleep(0.5)
-                continue
-
-            # 1. Wait for Wake Word
-            # ears.listen usually has a timeout. We use it to poll.
-            try:
-                # We are in "Wake Word Detection" mode
-                text = ears.listen(timeout=1.0)
-                if not text:
-                    continue
-                
-                # Double check active state after blocking
-                if not self.chat_active:
-                    continue
-
-                text_lower = text.lower()
-                if "robot" in text_lower or "habibot" in text_lower:
-                    print(f"[Wake] Detected in: '{text}'")
-                    
-                    # Lock for conversation turn
-                    with self.lock:
-                        mouth.speak("Habibot is listening.")
-                    
-                    # 2. Listen for Command
-                    print("\n[State] Listening for command...")
-                    user_input = ears.listen(timeout=8.0) # slightly longer for command
-                    
-                    if not user_input:
-                        print("[State] No command received. Returning to wake word.")
-                        continue
-                        
-                    # 3. Process Command (Stop logic + Gemini)
-                    self.process_voice_command(user_input)
-
-            except Exception as e:
-                print(f"Error in voice loop: {e}")
-                time.sleep(1)
-
-    def process_voice_command(self, text):
-        text_lower = text.lower()
-        
-        # Phase 1: Local Stop Logic
-        stop_phrases = ["goodbye", "stop listening", "exit"]
-        if any(phrase in text_lower for phrase in stop_phrases):
-             print("[State] Stop command detected.")
-             with self.lock:
-                 mouth.speak("Okay, I'll be quiet.")
-             return
-
-        # Phase 1: Think (Gemini)
-        print(f"[Thinking] {text}")
-        response = brain.think(text)
-        
-        # Phase 1: Speak
-        with self.lock:
-            mouth.speak(response)
-
-    def set_chat_mode(self, active):
-        print(f"Setting Chat Mode: {active}")
-        self.chat_active = active
-        with self.lock:
-            if active:
-                mouth.speak("I am listening.")
-            else:
-                mouth.speak("Audio off.")
-
-    def trigger_action(self, action_id):
-        """
-        Execute one of the button scripts.
-        """
-        print(f"Triggering Action: {action_id}")
-        
-        # Run in a separate thread
-        threading.Thread(target=self._run_action_script, args=(action_id,)).start()
-
-    def _run_action_script(self, action_id):
-        # Acquire lock to prevent Voice Loop from speaking over the action
-        with self.lock:
-            try:
-                if action_id == "btn-1":
-                    self.action_the_giver()
-                elif action_id == "btn-2":
-                    self.action_robot_sings()
-                elif action_id == "btn-3":
-                    self.action_standup_comedy()
-                elif action_id == "btn-4":
-                    self.action_living_statue()
-                elif action_id == "btn-5":
-                    self.action_fortune_teller()
-                elif action_id == "btn-6":
-                    self.action_selfie_mode()
-                elif action_id == "btn-7":
-                    self.action_rps_game()
-                elif action_id == "btn-8":
-                    self.action_the_butler()
-                elif action_id == "btn-9":
-                    self.action_wedding_toast()
-                else:
-                    print(f"Unknown action: {action_id}")
-            except Exception as e:
-                print(f"Action failed: {e}")
-
-    # --- PHOTO UPLOAD FEATURE ---
-
-    def set_photo_mode(self, active):
-        print(f"Setting Photo Mode: {active}")
-        self.photo_active = active
-        if active:
-            if self.photo_thread is None or not self.photo_thread.is_alive():
-                self.photo_thread = threading.Thread(target=self._photo_loop, daemon=True)
-                self.photo_thread.start()
-        # If inactive, the loop will exit on next iteration check
-
-    def update_photo_settings(self, interval, url):
-        print(f"Updating Photo Settings: Interval={interval}s, URL={url}")
-        self.photo_interval = float(interval)
-        self.photo_url = url
+    # ... (skipping methods)
 
     def _photo_loop(self):
         print("Photo loop started...")
+        
+        # Start Camera
+        self.camera.start()
+        
         while self.photo_active and self.running:
             try:
-                # Capture Photo (Mock)
+                # Capture Photo
                 print("[Photo] Capturing photo...")
-                # In real life, camera capture here.
-                # We will create a dummy image byte array (random noise or just text)
-                dummy_image = b"FAKE_IMAGE_DATA_" + str(datetime.datetime.now()).encode()
+                image_data = self.camera.capture_frame()
                 
-                # Upload
-                if self.photo_url:
-                    print(f"[Photo] Uploading to {self.photo_url}...")
+                if image_data:
+                    # Upload
+                    if self.photo_url:
+                        print(f"[Photo] Uploading {len(image_data)} bytes to {self.photo_url}...")
+                        try:
+                            # Post as multipart/form-data
+                            files = {'file': ('photo.jpg', image_data, 'image/jpeg')}
+                            response = requests.post(self.photo_url, files=files, timeout=5)
+                            print(f"[Photo] Upload Status: {response.status_code}")
+                            
+                            # Optional: Save locally for debug
+                            # with open("last_photo.jpg", "wb") as f:
+                            #     f.write(image_data)
+                            
+                        except Exception as e:
+                            print(f"[Photo] Upload Failed: {e}")
+                else:
+                    print("[Photo] Failed to capture frame.")
+                
+                # Sleep for interval
+                # Check status periodically to allow faster shutdown
+                param_check_interval = 2.0
+                waited = 0
+                while waited < self.photo_interval:
+                    if not self.photo_active or not self.running:
+                        break
+                    time.sleep(param_check_interval)
+                    waited += param_check_interval
+                    
+            except Exception as e:
+                print(f"Error in photo loop: {e}")
+                time.sleep(5)
+                
+        # Stop Camera when loop ends
+        self.camera.stop()
+        print("Photo loop stopped.")
                     try:
                         # Post as multipart/form-data or raw bytes depending on server. 
                         # Standard way: files={'file': ...}

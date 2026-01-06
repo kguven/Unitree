@@ -61,9 +61,10 @@ async def generate_audio(text, output_file="response.mp3"):
     communicate = edge_tts.Communicate(text, VOICE)
     await communicate.save(output_file)
 
-def play_audio(file_path="response.mp3", device_name=None):
+def play_audio(file_path="response.mp3", device_name=None, interrupt_check=None):
     """
     Plays the audio file using pygame.
+    Can be interrupted if interrupt_check returns true/value.
     """
     try:
         # Initialize mixer with specific device if provided
@@ -82,6 +83,14 @@ def play_audio(file_path="response.mp3", device_name=None):
         pygame.mixer.music.play()
         
         while pygame.mixer.music.get_busy():
+            # Check for interruption
+            if interrupt_check:
+                interruption = interrupt_check()
+                if interruption:
+                    pygame.mixer.music.stop()
+                    pygame.mixer.quit()
+                    return interruption
+
             pygame.time.Clock().tick(10)
             
         pygame.mixer.quit() # Release the file so it can be overwritten
@@ -91,7 +100,7 @@ def play_audio(file_path="response.mp3", device_name=None):
             print("Audio device busy, retrying in 1 second...")
             import time
             time.sleep(1)
-            play_audio(file_path, device_name) # Retry
+            play_audio(file_path, device_name, interrupt_check) # Retry
         else:
              print(f"Pygame error playing audio: {e}")
     except Exception as e:
@@ -141,9 +150,10 @@ def clean_text(text):
         
     return text
 
-def speak(text, device_name=None):
+def speak(text, device_name=None, interrupt_check=None):
     """
     Main function to handle TTS and playback.
+    Returns: The interruption value if interrupted, else None.
     """
     if not text:
         return
@@ -177,7 +187,7 @@ def speak(text, device_name=None):
         if not os.path.exists(output_file) or os.path.getsize(output_file) < 100:
              raise ValueError("Generated audio file is too small or missing.")
 
-        play_audio(output_file, device_name)
+        play_audio(output_file, device_name, interrupt_check)
     except Exception as e:
         print(f"Error in speak (edge_tts): {e}")
         print("Switching to offline TTS fallback...")

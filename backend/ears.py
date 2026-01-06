@@ -57,6 +57,18 @@ def listen(timeout=10):
     # Timeout - no text received
     return None
 
+def check_latest():
+    """
+    Check for the latest text immediately without blocking/timeout.
+    Returns the text if available safely, else None.
+    """
+    global _asr_subscriber
+    
+    if not _asr_subscriber:
+        return None
+        
+    return _asr_subscriber.get_last_text()
+
 if __name__ == "__main__":
     # Test the ASR
     if initialize_asr():

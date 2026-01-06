@@ -32,3 +32,9 @@ temp_speech.mp3
 
 # External Dependencies
 inspire_hand_ws/
+
+# RealSense / Camera
+*.bag
+*.jpg
+*.png
+last_photo.jpg
