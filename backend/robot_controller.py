@@ -609,7 +609,7 @@ class RobotController:
         
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
-                target[7] = 0.04   # R_ShoulderPitch
+        target[7] = 0.04   # R_ShoulderPitch
         target[8] = 0.00   # R_ShoulderRoll
         target[9] = -0.42   # R_ShoulderYaw
         target[10] = -0.07 # R_Elbow
