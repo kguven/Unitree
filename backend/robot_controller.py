@@ -62,31 +62,32 @@ class G1JointIndex:
     RightAnkleRoll = 11
     RightAnkleA = 11
 
+    # Waist (Torso)
     WaistYaw = 12
-    WaistRoll = 13        # NOTE: INVALID for g1 23dof/29dof with waist locked
-    WaistA = 13           # NOTE: INVALID for g1 23dof/29dof with waist locked
-    WaistPitch = 14       # NOTE: INVALID for g1 23dof/29dof with waist locked
-    WaistB = 14           # NOTE: INVALID for g1 23dof/29dof with waist locked
+    WaistRoll = 13        # 29-DOF model has waist locked usually? But example lists them.
+    WaistA = 13           
+    WaistPitch = 14       
+    WaistB = 14           
 
-    # Left arm
+    # Left arm (7 DOF)
     LeftShoulderPitch = 15
     LeftShoulderRoll = 16
     LeftShoulderYaw = 17
     LeftElbow = 18
     LeftWristRoll = 19
-    LeftWristPitch = 20   # NOTE: INVALID for g1 23dof
-    LeftWristYaw = 21     # NOTE: INVALID for g1 23dof
+    LeftWristPitch = 20   
+    LeftWristYaw = 21     
 
-    # Right arm
+    # Right arm (7 DOF)
     RightShoulderPitch = 22
     RightShoulderRoll = 23
     RightShoulderYaw = 24
     RightElbow = 25
     RightWristRoll = 26
-    RightWristPitch = 27  # NOTE: INVALID for g1 23dof
-    RightWristYaw = 28    # NOTE: INVALID for g1 23dof
+    RightWristPitch = 27  
+    RightWristYaw = 28    
 
-    kNotUsedJoint = 29 # NOTE: Weight
+    kNotUsedJoint = 29
 
 
 class HandController:

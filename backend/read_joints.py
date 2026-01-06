@@ -16,27 +16,30 @@ from unitree_sdk2py.utils.crc import CRC
 
 # Joint Indices (Copied from robot_controller.py for consistency)
 class G1JointIndex:
-    LeftShoulderPitch = 13
-    LeftShoulderRoll = 14
-    LeftShoulderYaw = 15
-    LeftElbow = 16
-    LeftWristRoll = 17
-    LeftWristPitch = 18
-    LeftWristYaw = 19
+    # Left arm - Matches g1_arm7_sdk_dds_example.py
+    LeftShoulderPitch = 15
+    LeftShoulderRoll = 16
+    LeftShoulderYaw = 17
+    LeftElbow = 18
+    LeftWristRoll = 19
+    LeftWristPitch = 20
+    LeftWristYaw = 21
     
-    RightShoulderPitch = 20
-    RightShoulderRoll = 21
-    RightShoulderYaw = 22
-    RightElbow = 23
-    RightWristRoll = 24
-    RightWristPitch = 25
-    RightWristYaw = 26
+    # Right arm
+    RightShoulderPitch = 22
+    RightShoulderRoll = 23
+    RightShoulderYaw = 24
+    RightElbow = 25
+    RightWristRoll = 26
+    RightWristPitch = 27
+    RightWristYaw = 28
 
-    WaistYaw = 27
-    WaistRoll = 28
-    WaistPitch = 29
+    # Waist
+    WaistYaw = 12
+    WaistRoll = 13
+    WaistPitch = 14
     
-    kNotUsedJoint = 30
+    kNotUsedJoint = 29
 
 def main():
     print("Initializing Joint Reader...")
@@ -100,11 +103,11 @@ def main():
             low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = 1 # Enable arm_sdk control logic
             
             for joint_idx in all_controlled_joints:
-                low_cmd.motor_cmd[joint_idx].mode = 1 # Enabled? SDK might differ, usually q=0, kp=0, kd=valid is enough.
-                low_cmd.motor_cmd[joint_idx].q = 0.0 # Target 0 (ignored by Kp=0)
+                low_cmd.motor_cmd[joint_idx].mode = 1 
+                low_cmd.motor_cmd[joint_idx].q = 0.0 
                 low_cmd.motor_cmd[joint_idx].dq = 0.0
-                low_cmd.motor_cmd[joint_idx].kp = 0.0 # No stiffness -> Compliant
-                low_cmd.motor_cmd[joint_idx].kd = 2.5 # Damping -> Resistance to fast motion (Safety)
+                low_cmd.motor_cmd[joint_idx].kp = 0.0 
+                low_cmd.motor_cmd[joint_idx].kd = 2.5 
                 low_cmd.motor_cmd[joint_idx].tau = 0.0
 
             low_cmd.crc = crc_util.Crc(low_cmd)
@@ -114,17 +117,27 @@ def main():
             state = state_container["low_state"]
             if state:
                 # Format Output
-                # \r to overwrite line
-                
-                # Extract values
                 l_q = [state.motor_state[i].q for i in left_arm_indices]
                 r_q = [state.motor_state[i].q for i in right_arm_indices]
                 
-                # Clear screen or use fixed prints
+                # Check for Head?
+                # C++ example implied low_cmd.head()[0]. Maybe state has it too?
+                head_info = "N/A"
+                try:
+                    # Check standard attributes
+                    if hasattr(state, 'motor_state'):
+                        # Check length
+                        if len(state.motor_state) > 30:
+                             # Maybe head is at 30, 31?
+                             h_q = [state.motor_state[i].q for i in range(30, min(35, len(state.motor_state)))]
+                             head_info = f"Extra Motors: {h_q}"
+                except:
+                    pass
+                
                 print("\033[H\033[J", end="") # Clear console
                 
                 print("=== G1 Joint Reader (Damping Mode) ===")
-                print("Move the arms manually. Copy these values for your Actions.")
+                print(f"Indices: L={left_arm_indices[0]}-{left_arm_indices[-1]}, R={right_arm_indices[0]}-{right_arm_indices[-1]}")
                 print("-" * 50)
                 print("Right Arm (used for Giver):")
                 print(f"  Shoulder Pitch : {r_q[0]:.2f}")
@@ -137,10 +150,9 @@ def main():
                 print("-" * 20)
                 print(f"FULL RIGHT ARRAY: [{', '.join([f'{x:.2f}' for x in r_q])}]")
                 print("-" * 50)
-                print("Left Arm:")
-                print(f"FULL LEFT ARRAY : [{', '.join([f'{x:.2f}' for x in l_q])}]")
+                print(f"HEAD/EXTRA: {head_info}")
                 
-            time.sleep(0.05) # 20Hz refresh for display
+            time.sleep(0.05)
             
     except KeyboardInterrupt:
         print("\nExiting...")
