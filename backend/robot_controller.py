@@ -688,9 +688,11 @@ class RobotController:
     def action_living_statue(self):
         print("[MOTION] FREEZE MODE (Statue Pose)")
         # User Provided "Living Statue" Pose
-        # [-0.21, -1.24, -1.10, 0.30, 0.21, -0.08, -0.01]
+        # Right: [-0.21, -1.24, -1.10, 0.30, 0.21, -0.08, -0.01]
         
         statue_target = [None] * 17
+        
+        # Right Arm
         statue_target[7] = -0.21
         statue_target[8] = -1.24
         statue_target[9] = -1.10
@@ -699,8 +701,17 @@ class RobotController:
         statue_target[12] = -0.08
         statue_target[13] = -0.01
         
-        # Move to pose and freeze
-        self._move_arm_safe(statue_target, duration=1.5, hold_time=5.0)
+        # Left Arm (Mirrored)
+        statue_target[0] = -0.21  # Pitch (Same)
+        statue_target[1] = 1.24   # Roll (Inverted)
+        statue_target[2] = 1.10   # Yaw (Inverted)
+        statue_target[3] = 0.30   # Elbow (Same)
+        statue_target[4] = -0.21  # WristRoll (Inverted)
+        statue_target[5] = -0.08  # WristPitch (Same)
+        statue_target[6] = 0.01   # WristYaw (Inverted)
+        
+        # Move to pose and freeze FAST (Scare effect)
+        self._move_arm_safe(statue_target, duration=0.2, hold_time=5.0)
         
         print("[MOTION] Sudden Turn Left!")
         mouth.speak("Do you have a charging cable?!")
@@ -803,25 +814,36 @@ class RobotController:
         mouth.speak("Please, take one. I cannot eat, I am on a diet of pure lithium.")
         
         # User Provided "Butler" Pose
-        # [-0.30, 0.06, 0.25, 0.60, 1.31, -0.10, 0.36]
+        # Right: [-0.30, 0.06, 0.25, 0.60, 1.31, -0.10, 0.36]
         
         target = [None] * 17
-        target[7] = -0.30  # Pitch
-        target[8] = 0.06   # Roll
-        target[9] = 0.25   # Yaw
-        target[10] = 0.60  # Elbow
-        target[11] = 1.31  # WristRoll
-        target[12] = -0.10 # WristPitch
-        target[13] = 0.36  # WristYaw
         
-        # Open Hand
-        self.hands.open_hand('r')
+        # Right Arm
+        target[7] = -0.30
+        target[8] = 0.06
+        target[9] = 0.25
+        target[10] = 0.60
+        target[11] = 1.31
+        target[12] = -0.10
+        target[13] = 0.36
+        
+        # Left Arm (Mirrored)
+        target[0] = -0.30   # Pitch (Same)
+        target[1] = -0.06   # Roll (Inverted)
+        target[2] = -0.25   # Yaw (Inverted)
+        target[3] = 0.60    # Elbow (Same)
+        target[4] = -1.31   # WristRoll (Inverted)
+        target[5] = -0.10   # WristPitch (Same)
+        target[6] = -0.36   # WristYaw (Inverted)
+        
+        # Open Both Hands
+        self.hands.open_hand('both')
         
         # Move and Hold for 5 seconds
         self._move_arm_safe(target, duration=1.0, hold_time=5.0)
         
         # Close hand after
-        self.hands.close_hand('r')
+        self.hands.close_hand('both')
 
     def action_wedding_toast(self):
         print("[MOTION] Raising glass for toast...")
