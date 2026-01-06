@@ -351,6 +351,8 @@ class RobotController:
                 else:
                     print(f"Unknown action: {action_id}")
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 print(f"Action failed: {e}")
 
     # --- PHOTO UPLOAD FEATURE ---
