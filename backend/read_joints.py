@@ -152,7 +152,7 @@ def main():
                 print("-" * 50)
                 print(f"HEAD/EXTRA: {head_info}")
                 
-            time.sleep(0.05)
+            time.sleep(0.5)
             
     except KeyboardInterrupt:
         print("\nExiting...")
