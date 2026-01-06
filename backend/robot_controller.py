@@ -595,7 +595,7 @@ class RobotController:
         target[11] = -0.04  # R_WristRoll
         target[12] = -0.13  # R_WristPitch
         target[13] = -0.05 # R_WristYaw
-        self._move_arm_safe(target, duration=1.0, hold_time=0.0, return_to_start=True)
+        self._move_arm_safe(target, duration=1.0, hold_time=3.0, return_to_start=True)
         
         # Close hand
         self.hands.close_hand('r') 
