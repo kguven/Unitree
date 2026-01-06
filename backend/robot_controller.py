@@ -571,13 +571,13 @@ class RobotController:
         self.hands.open_hand('r')
         # Right Arm Extend (Custom)
         # Right Arm starts at index 7
-        target[7] = -1 # Lift arm slightly (Forward)
-        target[10] = 0.3 # Elbow Extend (Push)
+        target[7] = 1 # Lift arm slightly (Forward)
+        target[10] = 0.5 # Elbow Extend (Push)
     
         # Faster Move (1.0s)
         self._move_arm_safe(target, duration=3.0, hold_time=5.0)
         target[7] = 1 # Lift arm slightly (Forward)
-        target[10] = 0 # Elbow Extend (Push)
+        target[10] = 0.5 # Elbow Extend (Push)
     
         # Faster Move (1.0s)
         self._move_arm_safe(target, duration=3.0, hold_time=5.0)
