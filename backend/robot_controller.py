@@ -566,6 +566,9 @@ class RobotController:
         # Indices: 7 (L), 7 (R), 3 (W) = 17 total
         # We use 'None' for left arm to keep it still
         
+        # Open Hand
+        self.hands.open_hand('r')
+
         target = [None] * 17
         
         target[7] = -0.44   # R_ShoulderPitch
@@ -575,12 +578,6 @@ class RobotController:
         target[11] = -0.04  # R_WristRoll
         target[12] = -0.13  # R_WristPitch
         target[13] = -0.05 # R_WristYaw
-        
-        # Open Hand
-        self.hands.open_hand('r')
-        
-        # Move and Hold for interaction
-        # Duration 1.0s to get there, Hold 2.0s to offer card.
         self._move_arm_safe(target, duration=1.0, hold_time=2.0)
         target[7] = 0.69   # R_ShoulderPitch
         target[8] = -0.03   # R_ShoulderRoll
@@ -589,30 +586,17 @@ class RobotController:
         target[11] = -0.04  # R_WristRoll
         target[12] = -0.37  # R_WristPitch
         target[13] = 0.14 # R_WristYaw
-        
-        # Open Hand
-        self.hands.open_hand('r')
-        
-        # Move and Hold for interaction
-        # Duration 1.0s to get there, Hold 2.0s to offer card.
         self._move_arm_safe(target, duration=1.0, hold_time=2.0)
-        
-        
+
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
-        target[7] = 0.02   # R_ShoulderPitch
-        target[8] = 0.03   # R_ShoulderRoll
-        target[9] = -0.02   # R_ShoulderYaw
-        target[10] = -0.03 # R_Elbow
-        target[11] = 0.04  # R_WristRoll
-        target[12] = 0.28  # R_WristPitch
-        target[13] = 0.00 # R_WristYaw
-        
-        # Open Hand
-        self.hands.open_hand('r')
-        
-        # Move and Hold for interaction
-        # Duration 1.0s to get there, Hold 2.0s to offer card.
+        target[7] = -0.44   # R_ShoulderPitch
+        target[8] = 0.02   # R_ShoulderRoll
+        target[9] = -0.03   # R_ShoulderYaw
+        target[10] = 0.57 # R_Elbow
+        target[11] = -0.04  # R_WristRoll
+        target[12] = -0.13  # R_WristPitch
+        target[13] = -0.05 # R_WristYaw
         self._move_arm_safe(target, duration=1.0, hold_time=2.0)
         
         # Close hand
