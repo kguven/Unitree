@@ -567,22 +567,17 @@ class RobotController:
         
         target = [None] * 17
         
-        # Right Arm Angles (From recorded "Position 2")
-        # Shoulder Pitch : 0.04
-        # Shoulder Roll  : 0.00
-        # Shoulder Yaw   : 0.49
-        # Elbow          : -0.02
-        # Wrist Roll     : 0.04
-        # Wrist Pitch    : 0.96
-        # Wrist Yaw      : -0.06
+
+
+
         
-        target[7] = 0.04   # R_ShoulderPitch
-        target[8] = 0.00   # R_ShoulderRoll
-        target[9] = -0.42   # R_ShoulderYaw
-        target[10] = -0.07 # R_Elbow
-        target[11] = -0.34  # R_WristRoll
-        target[12] = 0.60  # R_WristPitch
-        target[13] = -0.13 # R_WristYaw
+        target[7] = 0.02   # R_ShoulderPitch
+        target[8] = 0.03   # R_ShoulderRoll
+        target[9] = -0.02   # R_ShoulderYaw
+        target[10] = -0.03 # R_Elbow
+        target[11] = 0.04  # R_WristRoll
+        target[12] = 0.28  # R_WristPitch
+        target[13] = 0.00 # R_WristYaw
         
         # Open Hand
         self.hands.open_hand('r')
@@ -590,14 +585,13 @@ class RobotController:
         # Move and Hold for interaction
         # Duration 1.0s to get there, Hold 2.0s to offer card.
         self._move_arm_safe(target, duration=1.0, hold_time=2.0)
-
-        target[7] = 0.04   # R_ShoulderPitch
-        target[8] = 0.00   # R_ShoulderRoll
-        target[9] = 0.49   # R_ShoulderYaw
-        target[10] = -0.02 # R_Elbow
-        target[11] = 0.04  # R_WristRoll
-        target[12] = 0.96  # R_WristPitch
-        target[13] = -0.06 # R_WristYaw
+        target[7] = 0.09   # R_ShoulderPitch
+        target[8] = 0.03   # R_ShoulderRoll
+        target[9] = 0.56   # R_ShoulderYaw
+        target[10] = -0.18 # R_Elbow
+        target[11] = 0.17  # R_WristRoll
+        target[12] = 1.11  # R_WristPitch
+        target[13] = -0.04 # R_WristYaw
         
         # Open Hand
         self.hands.open_hand('r')
@@ -609,13 +603,13 @@ class RobotController:
         
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
-        target[7] = 0.04   # R_ShoulderPitch
-        target[8] = 0.00   # R_ShoulderRoll
-        target[9] = -0.42   # R_ShoulderYaw
-        target[10] = -0.07 # R_Elbow
-        target[11] = -0.34  # R_WristRoll
-        target[12] = 0.60  # R_WristPitch
-        target[13] = -0.13 # R_WristYaw
+        target[7] = 0.02   # R_ShoulderPitch
+        target[8] = 0.03   # R_ShoulderRoll
+        target[9] = -0.02   # R_ShoulderYaw
+        target[10] = -0.03 # R_Elbow
+        target[11] = 0.04  # R_WristRoll
+        target[12] = 0.28  # R_WristPitch
+        target[13] = 0.00 # R_WristYaw
         
         # Open Hand
         self.hands.open_hand('r')
