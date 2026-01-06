@@ -425,7 +425,7 @@ class RobotController:
     
     # --- SAFE ARM CONTROL ---
     
-    def _move_arm_safe(self, target_config, duration=3.0, hold_time=0.0, return_to_start=True):
+    def _move_arm_safe(self, target_config, duration=3.0, hold_time=0.0, return_to_start=True, return_duration=None):
         """
         Executes a safe arm movement:
         1. Smoothly move from current Start to Target
@@ -433,6 +433,9 @@ class RobotController:
         3. (Optional) Smoothly move back to Start
         4. (Optional) Release Control
         """
+        if return_duration is None:
+            return_duration = duration
+
         # Ensure we have state
         print("[SafeArm] Waiting for LowState...")
         wait_start = time.time()
@@ -483,16 +486,16 @@ class RobotController:
             else:
                 final_target.append(val)
         
-        print(f"[SafeArm] Starting movement loop (Duration={duration}s, Hold={hold_time}s, Return={return_to_start})...")
+        print(f"[SafeArm] Starting movement loop (Rise={duration}s, Hold={hold_time}s, Fall={return_duration}s)...")
         
         # Phases Refined:
-        # 0 to T: Move Directly from Start to Target
-        # T to T+H: Hold
-        # T+H to 2T+H: Move Back to Start (Only if return_to_start)
-        # 2T+H to 3T+H: Release (Only if return_to_start)
+        # Phase 1: 0 to T_rise                 (Start -> Target)
+        # Phase 2: T_rise to T_rise+Hold       (Hold)
+        # Phase 3: T_rise+Hold to T_end_move   (Target -> Start) [Duration = return_duration]
+        # Phase 4: T_end_move to T_total       (Release)
 
         if return_to_start:
-            total_time = (duration * 2.5) + hold_time 
+            total_time = duration + hold_time + return_duration + (return_duration * 0.5) 
         else:
             total_time = duration + hold_time
         
@@ -523,10 +526,11 @@ class RobotController:
                     low_cmd.motor_cmd[joint].kd = kd
                     
             elif return_to_start:
-                if current_time < (duration * 2.0 + hold_time):
+                phase3_start = duration + hold_time
+                if current_time < (phase3_start + return_duration):
                     # [Stage 3]: Back to Start
                     for i, joint in enumerate(arm_joints):
-                        ratio = np.clip((current_time - (duration + hold_time)) / duration, 0.0, 1.0)
+                        ratio = np.clip((current_time - phase3_start) / return_duration, 0.0, 1.0)
                         low_cmd.motor_cmd[joint].tau = 0.
                         # Fade from Target back to Start
                         low_cmd.motor_cmd[joint].q = (1.0 - ratio) * final_target[i] + ratio * start_config[i]
@@ -536,11 +540,9 @@ class RobotController:
 
                 else:
                      # [Stage 4]: Release
-                     release_duration = duration * 0.5
-                     ratio = np.clip((current_time - (duration * 2.0 + hold_time)) / release_duration, 0.0, 1.0)
+                     release_duration = return_duration * 0.5
+                     ratio = np.clip((current_time - (phase3_start + return_duration)) / release_duration, 0.0, 1.0)
                      low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = (1 - ratio) # Disable bit fading
-                    
-
             
             # Write Command
             low_cmd.crc = crc_util.Crc(low_cmd)
@@ -711,7 +713,8 @@ class RobotController:
         statue_target[6] = 0.01   # WristYaw (Inverted)
         
         # Move to pose and freeze FAST (Scare effect)
-        self._move_arm_safe(statue_target, duration=0.2, hold_time=5.0)
+        # Then return slowly (Creepy effect)
+        self._move_arm_safe(statue_target, duration=0.2, hold_time=5.0, return_to_start=True, return_duration=3.0)
         
         print("[MOTION] Sudden Turn Left!")
         mouth.speak("Do you have a charging cable?!")
