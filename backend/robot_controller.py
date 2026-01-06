@@ -577,8 +577,19 @@ class RobotController:
         
         # Faster Move (1.0s)
         self._move_arm_safe(target, duration=1.0)
-        
-        time.sleep(0.5)
+        time.sleep(5)
+        target[7] = 1 # Lift arm slightly (Forward)
+        self._move_arm_safe(target, duration=2.0)
+        time.sleep(5)
+        target[7] = -1 # Lift arm slightly (Forward)
+        self._move_arm_safe(target, duration=2.0)
+        time.sleep(5)
+        target[3] = 1 # Lift arm slightly (Forward)
+        self._move_arm_safe(target, duration=2.0)
+        time.sleep(5)
+        target[3] = -1 # Lift arm slightly (Forward)
+        self._move_arm_safe(target, duration=2.0)
+        time.sleep(5)
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
         
