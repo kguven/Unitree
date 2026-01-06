@@ -200,11 +200,28 @@ class RobotController:
         # Camera Controller
         self.camera = camera.RealSenseCamera()
 
+        # Arm Control (Persistent Session)
+        print("[Robot] Initializing Arm Control Interface...")
+        try:
+            ChannelFactoryInitialize(0)
+        except:
+            pass # Might be initialized globally or by another module
+            
+        self.arm_sdk_publisher = ChannelPublisher("rt/arm_sdk", LowCmd_)
+        self.arm_sdk_publisher.Init()
+        
+        self.state_container = {"low_state": None}
+        self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
+        self.lowstate_subscriber.Init(self._low_state_handler, 10)
+        
         # Photo Upload State
         self.photo_active = False
         self.photo_interval = 60 # seconds
         self.photo_url = "http://localhost:5000/upload" # Default URL
         self.photo_thread = None
+
+    def _low_state_handler(self, msg: LowState_):
+        self.state_container["low_state"] = msg
 
     def _voice_loop(self):
         print("Voice loop started...")
@@ -404,43 +421,20 @@ class RobotController:
 
     # --- SAFE ARM CONTROL ---
     
-    def _move_arm_safe(self, target_config, duration=3.0, hold_time=0.0):
+    # --- SAFE ARM CONTROL ---
+    
+    def _move_arm_safe(self, target_config, duration=3.0, hold_time=0.0, return_to_start=True):
         """
         Executes a safe arm movement:
-        1. Initialize DDS Publisher/Subscriber
-        2. Smoothly move from current LowState to Zero
-        3. Smoothly move from Zero to Target
-        4. HOLD at Target (optional)
-        5. Smoothly move from Target to Zero
-        6. Release Control
+        1. Smoothly move from current Start to Target
+        2. HOLD at Target
+        3. (Optional) Smoothly move back to Start
+        4. (Optional) Release Control
         """
-        print("[SafeArm] Initializing DDS...")
-        # Note: We assume ChannelFactoryInitialize is called globally or inside here if needed.
-        # Ideally it's called once in main.
-        try:
-            ChannelFactoryInitialize(0)
-        except:
-            pass # Might already be initialized
-
-        arm_sdk_publisher = ChannelPublisher("rt/arm_sdk", LowCmd_)
-        arm_sdk_publisher.Init()
-        
-        lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
-        
-        # Shared state for callback
-        state_container = {"low_state": None, "first_update": False}
-        
-        def low_state_handler(msg: LowState_):
-            state_container["low_state"] = msg
-            if not state_container["first_update"]:
-                state_container["first_update"] = True
-                
-        lowstate_subscriber.Init(low_state_handler, 10)
-        
-        # Wait for first state
+        # Ensure we have state
         print("[SafeArm] Waiting for LowState...")
         wait_start = time.time()
-        while not state_container["first_update"]:
+        while self.state_container["low_state"] is None:
             time.sleep(0.1)
             if time.time() - wait_start > 5.0:
                 print("[SafeArm] Timeout waiting for LowState!")
@@ -487,15 +481,18 @@ class RobotController:
             else:
                 final_target.append(val)
         
-        print(f"[SafeArm] Starting movement loop (Duration={duration}s, Hold={hold_time}s)...")
+        print(f"[SafeArm] Starting movement loop (Duration={duration}s, Hold={hold_time}s, Return={return_to_start})...")
         
         # Phases Refined:
         # 0 to T: Move Directly from Start to Target
         # T to T+H: Hold
-        # T+H to 2T+H: Move Back to Start (or Zero? Let's go back to Start for consistency)
-        # 2T+H to 3T+H: Release
+        # T+H to 2T+H: Move Back to Start (Only if return_to_start)
+        # 2T+H to 3T+H: Release (Only if return_to_start)
 
-        total_time = (duration * 2.5) + hold_time 
+        if return_to_start:
+            total_time = (duration * 2.5) + hold_time 
+        else:
+            total_time = duration + hold_time
         
         while current_time < total_time:
             start_loop = time.time()
@@ -508,7 +505,6 @@ class RobotController:
                  for i, joint in enumerate(arm_joints):
                     ratio = np.clip(current_time / duration, 0.0, 1.0)
                     low_cmd.motor_cmd[joint].tau = 0.
-                    
                     # Direct Interpolation
                     low_cmd.motor_cmd[joint].q = (1.0 - ratio) * start_config[i] + ratio * final_target[i]
                     low_cmd.motor_cmd[joint].dq = 0.
@@ -524,23 +520,23 @@ class RobotController:
                     low_cmd.motor_cmd[joint].kp = kp
                     low_cmd.motor_cmd[joint].kd = kd
                     
-            elif current_time < (duration * 2.0 + hold_time):
-                # [Stage 3]: Back to Start
-                for i, joint in enumerate(arm_joints):
-                    ratio = np.clip((current_time - (duration + hold_time)) / duration, 0.0, 1.0)
-                    low_cmd.motor_cmd[joint].tau = 0.
-                    # Fade from Target back to Start
-                    low_cmd.motor_cmd[joint].q = (1.0 - ratio) * final_target[i] + ratio * start_config[i]
-                    low_cmd.motor_cmd[joint].dq = 0.
-                    low_cmd.motor_cmd[joint].kp = kp
-                    low_cmd.motor_cmd[joint].kd = kd
+            elif return_to_start:
+                if current_time < (duration * 2.0 + hold_time):
+                    # [Stage 3]: Back to Start
+                    for i, joint in enumerate(arm_joints):
+                        ratio = np.clip((current_time - (duration + hold_time)) / duration, 0.0, 1.0)
+                        low_cmd.motor_cmd[joint].tau = 0.
+                        # Fade from Target back to Start
+                        low_cmd.motor_cmd[joint].q = (1.0 - ratio) * final_target[i] + ratio * start_config[i]
+                        low_cmd.motor_cmd[joint].dq = 0.
+                        low_cmd.motor_cmd[joint].kp = kp
+                        low_cmd.motor_cmd[joint].kd = kd
 
-            else:
-                 # [Stage 4]: Release
-                 # Calculate release ratio
-                 release_duration = duration * 0.5
-                 ratio = np.clip((current_time - (duration * 2.0 + hold_time)) / release_duration, 0.0, 1.0)
-                 low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = (1 - ratio) # Disable bit fading
+                else:
+                     # [Stage 4]: Release
+                     release_duration = duration * 0.5
+                     ratio = np.clip((current_time - (duration * 2.0 + hold_time)) / release_duration, 0.0, 1.0)
+                     low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = (1 - ratio) # Disable bit fading
                     
 
             
@@ -578,7 +574,7 @@ class RobotController:
         target[11] = -0.04  # R_WristRoll
         target[12] = -0.13  # R_WristPitch
         target[13] = -0.05 # R_WristYaw
-        self._move_arm_safe(target, duration=1.0, hold_time=2.0)
+        self._move_arm_safe(target, duration=1.0, hold_time=2.0, return_to_start=False)
         target[7] = 0.69   # R_ShoulderPitch
         target[8] = -0.03   # R_ShoulderRoll
         target[9] = 0.10   # R_ShoulderYaw
@@ -586,7 +582,7 @@ class RobotController:
         target[11] = -0.04  # R_WristRoll
         target[12] = -0.37  # R_WristPitch
         target[13] = 0.14 # R_WristYaw
-        self._move_arm_safe(target, duration=1.0, hold_time=2.0)
+        self._move_arm_safe(target, duration=1.0, hold_time=1.0, return_to_start=False)
 
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
@@ -597,7 +593,7 @@ class RobotController:
         target[11] = -0.04  # R_WristRoll
         target[12] = -0.13  # R_WristPitch
         target[13] = -0.05 # R_WristYaw
-        self._move_arm_safe(target, duration=1.0, hold_time=2.0)
+        self._move_arm_safe(target, duration=1.0, hold_time=2.0, return_to_start=True)
         
         # Close hand
         self.hands.close_hand('r') 
