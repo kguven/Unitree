@@ -452,7 +452,6 @@ class RobotController:
         kd = 1.5
         
         # Arm Joints (Upper Limb - 7 DOF per arm + Waist)
-        # Using the G1JointIndex class we added
         arm_joints = [
           G1JointIndex.LeftShoulderPitch,  G1JointIndex.LeftShoulderRoll,
           G1JointIndex.LeftShoulderYaw,    G1JointIndex.LeftElbow,
@@ -470,85 +469,79 @@ class RobotController:
         low_cmd = unitree_hg_msg_dds__LowCmd_() 
         crc_util = CRC()
         
-        # target_config should be length 17 (Same as arm_joints list)
-        # If user passes less, we pad or ignore, but safety first:
+        # Capture Start Configuration
+        start_config = []
+        for joint in arm_joints:
+             start_config.append(state_container["low_state"].motor_state[joint].q)
+
+        # Handle 'None' in target_config (Station Keeping)
+        final_target = []
+        # Ensure target_config length matches
         if len(target_config) < len(arm_joints):
-            # Pad with zeros if shorter
-            target_config = list(target_config) + [0.0]*(len(arm_joints)-len(target_config))
+             target_config = list(target_config) + [None]*(len(arm_joints)-len(target_config))
+             
+        for i, val in enumerate(target_config):
+            if val is None:
+                final_target.append(start_config[i])
+            else:
+                final_target.append(val)
         
         print(f"[SafeArm] Starting movement loop (Duration={duration}s, Hold={hold_time}s)...")
         
-        # Phases
-        # 0 to T: Zero Posture
-        # T to 3T: Move to Target
-        # 3T to 3T+H: Hold
-        # 3T+H to 6T+H: Move Back to Zero
-        # 6T+H to 7T+H: Release
+        # Phases Refined:
+        # 0 to T: Move Directly from Start to Target
+        # T to T+H: Hold
+        # T+H to 2T+H: Move Back to Start (or Zero? Let's go back to Start for consistency)
+        # 2T+H to 3T+H: Release
 
-        total_time = (duration * 7.0) + hold_time
+        total_time = (duration * 2.5) + hold_time 
         
         while current_time < total_time:
             start_loop = time.time()
             current_time += control_dt
             
-            # --- Logic from Custom.LowCmdWrite ---
+            low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = 1 # Enable arm_sdk
             
             if current_time < duration:
-                # [Stage 1]: Zero Posture
-                low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q =  1 # Enable arm_sdk
-                for i, joint in enumerate(arm_joints):
+                 # [Stage 1]: Move Start -> Target
+                 for i, joint in enumerate(arm_joints):
                     ratio = np.clip(current_time / duration, 0.0, 1.0)
                     low_cmd.motor_cmd[joint].tau = 0.
-                    # Interpolate from current state to 0? verify logic from example
-                    # Example: (1.0 - ratio) * self.low_state.motor_state[joint].q
-                    # This means it fades FROM current state TO 0.
-                    low_cmd.motor_cmd[joint].q = (1.0 - ratio) * state_container["low_state"].motor_state[joint].q
-                    low_cmd.motor_cmd[joint].dq = 0.
-                    low_cmd.motor_cmd[joint].kp = kp
-                    low_cmd.motor_cmd[joint].kd = kd
                     
-            elif current_time < duration * 3:
-                 # [Stage 2]: Move to Target
-                 for i, joint in enumerate(arm_joints):
-                    ratio = np.clip((current_time - duration) / (duration * 2), 0.0, 1.0)
-                    low_cmd.motor_cmd[joint].tau = 0.
-                    # ratio * target + (1-ratio) * current_state(which is 0 now effectively? NO, current q from state)
-                    # The example logic: ratio * self.target_pos[i] + (1.0 - ratio) * self.low_state.motor_state[joint].q 
-                    # This continuously fights the current state to move towards target. 
-                    low_cmd.motor_cmd[joint].q = ratio * target_config[i] + (1.0 - ratio) * state_container["low_state"].motor_state[joint].q
+                    # Direct Interpolation
+                    low_cmd.motor_cmd[joint].q = (1.0 - ratio) * start_config[i] + ratio * final_target[i]
                     low_cmd.motor_cmd[joint].dq = 0.
                     low_cmd.motor_cmd[joint].kp = kp
                     low_cmd.motor_cmd[joint].kd = kd
             
-            elif current_time < (duration * 3 + hold_time):
-                # [Stage 3]: HOLD
+            elif current_time < (duration + hold_time):
+                # [Stage 2]: HOLD
                 for i, joint in enumerate(arm_joints):
-                    # Maintain target position
-                    # We continue to use the logic but with ratio=1.0 relative to target
                     low_cmd.motor_cmd[joint].tau = 0.
-                    low_cmd.motor_cmd[joint].q = 1.0 * target_config[i] + 0.0 * state_container["low_state"].motor_state[joint].q
+                    low_cmd.motor_cmd[joint].q = final_target[i]
                     low_cmd.motor_cmd[joint].dq = 0
                     low_cmd.motor_cmd[joint].kp = kp
                     low_cmd.motor_cmd[joint].kd = kd
                     
-            elif current_time < (duration * 6 + hold_time):
-                # [Stage 4]: Back to Zero
+            elif current_time < (duration * 2.0 + hold_time):
+                # [Stage 3]: Back to Start
                 for i, joint in enumerate(arm_joints):
-                    ratio = np.clip((current_time - (duration * 3 + hold_time)) / (duration * 3), 0.0, 1.0)
+                    ratio = np.clip((current_time - (duration + hold_time)) / duration, 0.0, 1.0)
                     low_cmd.motor_cmd[joint].tau = 0.
-                    # Fading out to 0 again?
-                    # Example says: (1.0 - ratio) * self.low_state.motor_state[joint].q
-                    # Yes, simply reduce gain/target to 0 relative to current state.
-                    low_cmd.motor_cmd[joint].q = (1.0 - ratio) * state_container["low_state"].motor_state[joint].q
+                    # Fade from Target back to Start
+                    low_cmd.motor_cmd[joint].q = (1.0 - ratio) * final_target[i] + ratio * start_config[i]
                     low_cmd.motor_cmd[joint].dq = 0.
                     low_cmd.motor_cmd[joint].kp = kp
                     low_cmd.motor_cmd[joint].kd = kd
 
-            elif current_time < (duration * 7 + hold_time):
-                 # [Stage 5]: Release
-                 for i, joint in enumerate(arm_joints):
-                    ratio = np.clip((current_time - (duration * 6 + hold_time)) / duration, 0.0, 1.0)
-                    low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = (1 - ratio) # Disable bit fading
+            else:
+                 # [Stage 4]: Release
+                 # Calculate release ratio
+                 release_duration = duration * 0.5
+                 ratio = np.clip((current_time - (duration * 2.0 + hold_time)) / release_duration, 0.0, 1.0)
+                 low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = (1 - ratio) # Disable bit fading
+                    
+
             
             # Write Command
             low_cmd.crc = crc_util.Crc(low_cmd)
@@ -570,34 +563,27 @@ class RobotController:
         
         # Target: Extend Right Arm
         # Indices: 7 (L), 7 (R), 3 (W) = 17 total
-        # We need 17 values. 
-        # Right Arm starts at index 7: R_Pitch, R_Roll, R_Yaw, R_Elbow, R_WristRoll, R_WristPitch, R_WristYaw
-        # Let's target: Right Shoulder Pitch=0, Roll=0, Yaw=0, Elbow=-1.5 (bent?), Wrist...
-        # Just a simple forward reach: RightShoulderPitch = -1.0 approx?
+        # We use 'None' for left arm to keep it still (Station Keeping)
         
-        # Poses from example:
-        # 0., kPi_2,  0., kPi_2, 0., 0., 0., (Left)
-        # 0., -kPi_2, 0., kPi_2, 0., 0., 0., (Right)
+        target = [None] * 17
         
-        target = [0.0] * 17
         # Right Arm Extend (Custom)
-        # RightShoulderPitch
-        target[7] = -1.0 # Lift arm?
+        # Right Arm starts at index 7
+        target[7] = -1.0 # Lift arm
         target[10] = 1.0 # Elbow bend
         
         # Open Hand
         self.hands.open_hand('r')
         
-        self._move_arm_safe(target, duration=1.5)
+        # Faster Move (1.0s)
+        self._move_arm_safe(target, duration=1.0)
         
-        time.sleep(1)
+        time.sleep(0.5)
         print("[MOTION] Pulling arm back quickly!")
         mouth.speak("Ah! Too slow! Just kidding, here you go.")
         
         # Close hand maybe?
-        self.hands.close_hand('r')
-        
-        # Another move? Maybe just return. 
+        self.hands.close_hand('r') 
         # _move_arm_safe goes back to zero automatically at the end of its cycle.
         # So we might just want to hold it? 
         # The current implementation does the full cycle: Zero -> Target -> Zero.
