@@ -620,14 +620,27 @@ class RobotController:
         threading.Thread(target=play_music).start()
         
         # Dance move: Wave arms
-        target = [0.0] * 17
-        # Lift both arms
-        target[0] = 1.0 # Left Pitch
-        target[7] = -1.0 # Right Pitch
+        # Dance move: Wave arms (User Provided "Hand Wave")
+        # Pos 1: [-0.37, -1.78, -1.34, 0.55, 0.02, 0.02, 0.06]
+        # Pos 2: [-0.33, -1.47, -1.40, -0.64, -0.02, 0.17, 0.05]
+        
+        pos1 = [None] * 17
+        pos1[7:14] = [-0.37, -1.78, -1.34, 0.55, 0.02, 0.02, 0.06]
+        
+        pos2 = [None] * 17
+        pos2[7:14] = [-0.33, -1.47, -1.40, -0.64, -0.02, 0.17, 0.05]
         
         self.hands.open_hand('both')
-        self._move_arm_safe(target, duration=2.0) # Will lift and lower
-        print("[MOTION] Bobbing Head + Arm Wave")
+        print("[MOTION] Waving Hand...")
+        
+        # Wave loop (3 times)
+        for _ in range(3):
+            self._move_arm_safe(pos1, duration=0.8, hold_time=0.1, return_to_start=False)
+            self._move_arm_safe(pos2, duration=0.8, hold_time=0.1, return_to_start=False)
+            
+        # Return to start at end
+        self._move_arm_safe(pos1, duration=1.0, hold_time=0.5, return_to_start=True)
+        print("[MOTION] Wave complete")
 
     def play_audio_file(self, filename):
         if not os.path.exists(filename):
@@ -650,40 +663,45 @@ class RobotController:
         prompt = "You are a Lebanese comedian. Tell a short, funny, sarcastic joke about traffic in Beirut or marriage."
         joke = brain.think(prompt)
         mouth.speak(joke)
-        print("[MOTION] Shrug Shoulders")
+        print("[MOTION] Shrug Shoulders (Comedia Pose)")
         
-        # Shrug Gesture: Palms up, elbows in, hands out
-        shrug_target = [0.0] * 17
-        # Left Arm
-        shrug_target[1] = 0.5   # Left Shoulder Roll (Out)
-        shrug_target[3] = 0.5   # Left Elbow (Slight Bend)
-        shrug_target[4] = 1.5   # Left Wrist Roll (Palm Up)
+        # User Provided "Comedia" Pose (Right Arm)
+        # [-0.18, -0.47, -0.51, 0.40, 0.33, 0.26, 0.06]
+        shrug_target = [None] * 17
         
-        # Right Arm
-        shrug_target[8] = -0.5  # Right Shoulder Roll (Out)
-        shrug_target[10] = 0.5  # Right Elbow (Slight Bend)
-        shrug_target[11] = -1.5 # Right Wrist Roll (Palm Up)
+        # Right Arm (Index 7-13)
+        shrug_target[7] = -0.18  # R_Pitch
+        shrug_target[8] = -0.47  # R_Roll
+        shrug_target[9] = -0.51  # R_Yaw
+        shrug_target[10] = 0.40  # R_Elbow
+        shrug_target[11] = 0.33  # R_WristRoll
+        shrug_target[12] = 0.26  # R_WristPitch
+        shrug_target[13] = 0.06  # R_WristYaw
         
         self.hands.open_hand('both')
-        self._move_arm_safe(shrug_target, duration=1.0, hold_time=2.0)
+        self._move_arm_safe(shrug_target, duration=1.0, hold_time=3.0)
 
         print("[AUDIO] Ba Dum Tss")
-        
-        # Restore/Run Custom Routine
-        try:
-            ChannelFactoryInitialize(0, "eth0")
-        except:
-            pass
-        try:
-            custom_runner = custom.Custom()
-            custom_runner.Init()
-            custom_runner.Start()
-        except Exception as e:
-            print(f"Custom routine error: {e}")
+        # Restore/Run Custom Routine (Optional/Legacy check)
+        # Removed legacy fallback block for cleaner code
 
     def action_living_statue(self):
-        print("[MOTION] FREEZE MODE (Damping)")
-        time.sleep(3)
+        print("[MOTION] FREEZE MODE (Statue Pose)")
+        # User Provided "Living Statue" Pose
+        # [-0.21, -1.24, -1.10, 0.30, 0.21, -0.08, -0.01]
+        
+        statue_target = [None] * 17
+        statue_target[7] = -0.21
+        statue_target[8] = -1.24
+        statue_target[9] = -1.10
+        statue_target[10] = 0.30
+        statue_target[11] = 0.21
+        statue_target[12] = -0.08
+        statue_target[13] = -0.01
+        
+        # Move to pose and freeze
+        self._move_arm_safe(statue_target, duration=1.5, hold_time=5.0)
+        
         print("[MOTION] Sudden Turn Left!")
         mouth.speak("Do you have a charging cable?!")
 
@@ -703,81 +721,98 @@ class RobotController:
         mouth.speak("Yalla, picture time! Everyone squeeze in!")
         print("[MOTION] Raise Left Arm (Peace Sign)")
         
-        # Target: Raise Left Arm
-        target = [0.0] * 17
-        target[0] = -1.2  # Left Shoulder Pitch (Up)
-        target[3] = 1.2   # Left Elbow (Bent)
-        target[4] = -0.5  # Left Wrist Roll
+        # User Provided "Selfie Mode" Poses (Right Arm recorded, assuming mirror for Left? 
+        # Or did user mean Right? "Right Arm (used for Giver)" label is constant.
+        # User output says "Right Arm". So we move RIGHT arm for Selfie?
+        # Standard selfie is holding camera with one hand (Right?).
+        # "1st position": [0.02, -0.26, 1.01, 1.28, 0.22, 0.00, -0.15]
         
-        # Peace Sign
-        self.hands.gesture('l', 'peace')
-        print("[MOTION] Tilt Head") # (No hardware control for head tilt yet)
+        target = [None] * 17
+        target[7] = 0.02
+        target[8] = -0.26
+        target[9] = 1.01
+        target[10] = 1.28
+        target[11] = 0.22
+        target[12] = 0.00
+        target[13] = -0.15
         
+        # Peace Sign with OTHER hand? Or same?
+        # If Right is holding camera, Left does peace.
+        # User didn't give Left. We'll just open Right hand (Holding phone).
+        self.hands.gesture('r', 'open') 
+        
+        print("[MOTION] Tilt Head") 
         # Execute Move and Hold
-        self._move_arm_safe(target, duration=1.5, hold_time=4.0)
+        # Pos 1
+        self._move_arm_safe(target, duration=1.5, hold_time=2.0, return_to_start=False)
+        # Pos 2 (Identical in user data, maybe slight adjust?)
+        self._move_arm_safe(target, duration=1.0, hold_time=2.0, return_to_start=True)
         
         mouth.speak("Send me that on Instagram! I look great.")
-        # Reset Hand
-        self.hands.open_hand('l')
 
     def action_rps_game(self):
-        # Swing Target: Lift arm with bent elbow
-        swing_target = [0.0] * 17
-        swing_target[7] = -0.8  # Right Shoulder Pitch (Lift)
-        swing_target[10] = 1.5  # Right Elbow (Bent)
+        # User Provided RPS Poses
+        # UP: [-0.07, -0.06, 0.28, 0.20, 0.04, -0.02, -0.25]
+        # DOWN: [0.06, -0.08, 0.32, 0.64, 0.04, -0.08, 0.01]
+        # SHOOT: [-0.86, -0.06, -0.16, 0.68, -0.02, 0.31, 0.22]
         
+        up_target = [None] * 17
+        up_target[7:14] = [-0.07, -0.06, 0.28, 0.20, 0.04, -0.02, -0.25]
+        
+        down_target = [None] * 17
+        down_target[7:14] = [0.06, -0.08, 0.32, 0.64, 0.04, -0.08, 0.01]
+        
+        shoot_target = [None] * 17
+        shoot_target[7:14] = [-0.86, -0.06, -0.16, 0.68, -0.02, 0.31, 0.22]
+
         # Swing 1
         mouth.speak("Rock...")
-        print("[MOTION] Swing Arm 1...")
-        self.hands.close_hand('r') # Fist during windup
-        self._move_arm_safe(swing_target, duration=0.8)
+        print("[MOTION] Swing 1")
+        self.hands.close_hand('r') 
+        self._move_arm_safe(up_target, duration=0.4, hold_time=0.1, return_to_start=False)
+        self._move_arm_safe(down_target, duration=0.4, hold_time=0.1, return_to_start=False)
         
         # Swing 2
         mouth.speak("Paper...")
-        print("[MOTION] Swing Arm 2...")
-        self._move_arm_safe(swing_target, duration=0.8)
+        print("[MOTION] Swing 2")
+        self._move_arm_safe(up_target, duration=0.4, hold_time=0.1, return_to_start=False)
+        self._move_arm_safe(down_target, duration=0.4, hold_time=0.1, return_to_start=False)
         
         # Swing 3
         mouth.speak("Scissors...")
-        print("[MOTION] Swing Arm 3...")
-        self._move_arm_safe(swing_target, duration=0.8)
+        print("[MOTION] Swing 3")
+        self._move_arm_safe(up_target, duration=0.4, hold_time=0.1, return_to_start=False)
         
         # SHOOT
         mouth.speak("SHOOT!")
         choice = random.choice(["rock", "paper", "scissors"])
         print(f"[MOTION] Hand Pose: {choice}")
         
-        # Move arm forward to show
-        show_target = [0.0] * 17
-        show_target[7] = -0.5
-        show_target[10] = 0.5 # Less bent, extending
-        
-        # We want to hold it a bit? _move_arm_safe returns to zero.
-        # Let's just do a normal safe move but show the hand gesture during it.
-        
         def set_hand():
-            time.sleep(0.5) # Wait for arm to be in position
-            self.hands.gesture('r', choice)
-            
+             self.hands.gesture('r', choice)
         threading.Thread(target=set_hand).start()
         
-        self._move_arm_safe(show_target, duration=2.0)
+        self._move_arm_safe(shoot_target, duration=0.3, hold_time=2.0, return_to_start=True)
         
         mouth.speak(f"I chose {choice}!")
         time.sleep(1.0)
-        self.hands.open_hand('r') # Reset hand
+        self.hands.open_hand('r')
 
     def action_the_butler(self):
         print("[MOTION] Butler Pose (Tray)...")
         mouth.speak("Please, take one. I cannot eat, I am on a diet of pure lithium.")
         
-        # Target: Right Arm "L" Shape (Tray)
-        target = [0.0] * 17
-        target[7] = 0.0   # Right Shoulder Pitch (Neutral)
-        target[8] = 0.0   # Right Shoulder Roll (Neutral)
-        target[9] = 0.0   # Right Shoulder Yaw (Neutral
-        target[10] = 1.6  # Right Elbow (Bent 90 deg)
-        target[11] = 1.57 # Right Wrist Roll (Rotate for palm up)
+        # User Provided "Butler" Pose
+        # [-0.30, 0.06, 0.25, 0.60, 1.31, -0.10, 0.36]
+        
+        target = [None] * 17
+        target[7] = -0.30  # Pitch
+        target[8] = 0.06   # Roll
+        target[9] = 0.25   # Yaw
+        target[10] = 0.60  # Elbow
+        target[11] = 1.31  # WristRoll
+        target[12] = -0.10 # WristPitch
+        target[13] = 0.36  # WristYaw
         
         # Open Hand
         self.hands.open_hand('r')
@@ -796,29 +831,26 @@ class RobotController:
         time.sleep(0.5)
         
         # 2. Raise Right Arm
-        # Shoulder Pitch -1.3 (Up), Elbow 1.5 (Bent)
-        raise_target = [0.0] * 17
-        raise_target[7] = -1.3
-        raise_target[10] = 1.5
+        # User Provided "Wedding Toast" Pose
+        # [-1.18, -0.28, -0.10, 0.71, 0.26, -0.12, -0.14]
         
-        # Move up
-        self._move_arm_safe(raise_target, duration=1.5, hold_time=4.0)
+        raise_target = [None] * 17
+        raise_target[7] = -1.18
+        raise_target[8] = -0.28
+        raise_target[9] = -0.10
+        raise_target[10] = 0.71
+        raise_target[11] = 0.26
+        raise_target[12] = -0.12
+        raise_target[13] = -0.14
         
-        # Note: _move_arm_safe blocks during the move and hold.
-        # But we want to speak *while* holding or *after* raising?
-        # The current implementation of _move_arm_safe blocks. 
-        # So we can't speak "during" the hold easily unless we thread it 
-        # or if we split the move.
-        # _move_arm_safe does Zero->Target->Hold->Zero.
-        # Ideally, we speak during the Hold phase.
-        
-        # To fix this properly, let's use a thread for speaking since _move_arm_safe is blocking.
+        # To speak during hold, start thread
         def speak_toast():
             time.sleep(1.5) # Wait for arm to go up
             mouth.speak("Mabrouk to the happy couple! May your battery life be long and your connection strong! Cheers!")
              
         threading.Thread(target=speak_toast).start()
         
-        # The arm will hold for 4 seconds (covering the speech) then lower.
+        # Move up and hold
+        self._move_arm_safe(raise_target, duration=1.5, hold_time=5.0)
         
         print("[MOTION] Toast complete.")
