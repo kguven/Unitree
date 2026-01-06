@@ -34,6 +34,7 @@ from dataclasses import dataclass
 
 from . import custom
 from . import wav_helper
+from . import camera
 
 
 
@@ -167,9 +168,6 @@ class HandController:
 
 
 class RobotController:
-from . import camera # Import Camera
-
-    # ... (skipping to __init__)
 
     def __init__(self):
         # Default to TRUE to match Phase 1 behavior (always on by default)
