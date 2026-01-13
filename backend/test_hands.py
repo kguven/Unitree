@@ -1,127 +1,195 @@
-import sys
-import os
 import time
+import sys
+import math
+import termios
+import tty
+import select
+import threading
+from dataclasses import dataclass
+import numpy as np
 
-# Add Inspire Hand SDK to path
-sys.path.append(os.path.join(os.path.dirname(__file__), "inspire_hand_ws/inspire_hand_sdk"))
-
-try:
-    from inspire_hand_sdk import inspire_dds, inspire_hand_defaut
-    print("PASS: Successfully imported inspire_hand_sdk")
-except ImportError as e:
-    print(f"FAIL: Could not import inspire_hand_sdk: {e}")
-    sys.exit(1)
-
+# --- Unitree SDK & IDL Definitions ---
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelFactoryInitialize
+import cyclonedds.idl as idl
+import cyclonedds.idl.annotations as annotate
+import cyclonedds.idl.types as types
+
+# Define inspire_hand_ctrl IDL structure inline
+# Matches inspire_hand_ctrl.idl specific to Inspire Hand
+@dataclass
+@annotate.final
+@annotate.autoid("sequential")
+class inspire_hand_ctrl(idl.IdlStruct, typename="inspire.inspire_hand_ctrl"):
+    pos_set: types.sequence[types.int16, 6]
+    angle_set: types.sequence[types.int16, 6]
+    force_set: types.sequence[types.int16, 6]
+    speed_set: types.sequence[types.int16, 6]
+    mode: types.int8
+
+# Constants
+MOTOR_MAX = 6
+# Max/Min limits (approximate for Inspire Hand 0-1000 range)
+# 0 = Open, 1000 = Closed
+LIMIT_OPEN = 0
+LIMIT_CLOSED = 1000
 
 class HandController:
-    def __init__(self):
-        self.points = 6
-        self.right_hand_publisher = None
-        self.left_hand_publisher = None
-        
-        if inspire_dds is None:
-            return
-
-        print("[Hand] Initializing Hand Publishers...")
-        try:
-            # Right Hand
-            self.right_hand_publisher = ChannelPublisher("rt/inspire_hand/ctrl/r", inspire_dds.inspire_hand_ctrl)
-            self.right_hand_publisher.Init()
-            
-            # Left Hand
-            self.left_hand_publisher = ChannelPublisher("rt/inspire_hand/ctrl/l", inspire_dds.inspire_hand_ctrl)
-            self.left_hand_publisher.Init()
-        except Exception as e:
-            print(f"[Hand] Init failed: {e}")
-
-    def move_hand(self, side, angles):
+    def __init__(self, hand_id):
         """
-        side: 'r' or 'l'
-        angles: list of 6 ints (0-1000). 0=Open, 1000=Closed.
-        Indices: 0:Pinky, 1:Ring, 2:Middle, 3:Index, 4:ThumbBend, 5:ThumbRot
+        hand_id: 'L' or 'R'
         """
-        if inspire_dds is None: return
-        
-        cmd = inspire_hand_defaut.get_inspire_hand_ctrl()
-        cmd.mode = 1 # Angle Mode
-        cmd.angle_set = angles
-        
-        if side == 'r' and self.right_hand_publisher:
-            self.right_hand_publisher.Write(cmd)
-        elif side == 'l' and self.left_hand_publisher:
-            self.left_hand_publisher.Write(cmd)
+        self.hand_id = hand_id
+        if hand_id == 'L':
+            self.topic = "rt/inspire_hand/ctrl/l"
+        else:
+            self.topic = "rt/inspire_hand/ctrl/r"
             
-    def open_hand(self, side='both'):
-        open_angles = [0, 0, 0, 0, 0, 0]
-        if side in ['r', 'both']:
-            self.move_hand('r', open_angles)
-        if side in ['l', 'both']:
-            self.move_hand('l', open_angles)
-            
-    def close_hand(self, side='both'):
-        close_angles = [1000, 1000, 1000, 1000, 1000, 1000]
-        if side in ['r', 'both']:
-            self.move_hand('r', close_angles)
-        if side in ['l', 'both']:
-            self.move_hand('l', close_angles)
-
-    def gesture(self, side, name):
-        # 0:Pinky, 1:Ring, 2:Middle, 3:Index, 4:ThumbBend, 5:ThumbRot
-        angles = [1000]*6 # Default Closed
+        print(f"Initializing Publisher for {self.hand_id} Hand on topic: {self.topic}")
+        self.publisher = ChannelPublisher(self.topic, inspire_hand_ctrl)
+        self.publisher.Init()
         
-        if name == "open":
-            angles = [0]*6
-        elif name == "close" or name == "rock":
-            angles = [1000]*6
-        elif name == "paper":
-            angles = [0]*6
-        elif name == "scissors":
-            # Index(3) and Middle(2) Open (0), others Closed (1000)
-            angles = [1000, 1000, 0, 0, 1000, 1000] 
-        elif name == "peace":
-             # Same as scissors essentially
-            angles = [1000, 1000, 0, 0, 1000, 1000]
-        elif name == "pointer":
-            # Index Open
-             angles = [1000, 1000, 1000, 0, 1000, 1000]
+        self.msg = inspire_hand_ctrl(
+            pos_set=[0]*6,
+            angle_set=[0]*6,
+            force_set=[0]*6,
+            speed_set=[0]*6,
+            mode=0
+        )
+        
+        self._count = 0
+        self._dir = 1
+        
+    def rotate_motors(self):
+        """
+        Simulate 'Rotate' (Wave) effect using Sine wave on angles.
+        Inspire Hand Range: 0-1000
+        """
+        # Mode 1: Angle Control
+        # Binary: 0001
+        self.msg.mode = 1 
+        
+        # Reset other fields
+        self.msg.pos_set = [0]*6
+        self.msg.force_set = [0]*6
+        self.msg.speed_set = [0]*6 # Default speed? Or specific?
+        
+        # Calculate Sine Wave
+        # Period ~ 200 steps (if called loop is fast)
+        amplitude = (LIMIT_CLOSED - LIMIT_OPEN) / 2.0
+        mid = (LIMIT_CLOSED + LIMIT_OPEN) / 2.0
+        
+        val = mid + amplitude * math.sin(self._count / 50.0 * math.pi)
+        int_val = int(max(0, min(1000, val)))
+        
+        # Apply to all fingers
+        self.msg.angle_set = [int_val] * 6
+        
+        self.publisher.Write(self.msg)
+        
+        self._count += self._dir
+        if self._count >= 100: self._dir = -1
+        if self._count <= -100: self._dir = 1
+        
+        time.sleep(0.02) # 50Hz approx
 
-        if side in ['r', 'both']:
-            self.move_hand('r', angles)
-        if side in ['l', 'both']:
-            self.move_hand('l', angles)
+    def grip_hand(self):
+        """
+        Close hand static.
+        """
+        self.msg.mode = 1 # Angle
+        self.msg.angle_set = [LIMIT_CLOSED] * 6
+        self.publisher.Write(self.msg)
+        time.sleep(0.1)
 
-def test_hands():
-    print("--------------------------------------------------")
-    print("Running Inspire Hand Test...")
-    print("--------------------------------------------------")
-    
-    # Init DDS
+    def stop_motors(self):
+        """
+        Open/Release hand.
+        """
+        self.msg.mode = 1 # Angle
+        self.msg.angle_set = [LIMIT_OPEN] * 6
+        self.publisher.Write(self.msg)
+        time.sleep(0.1)
+
+
+# --- Input Handling ---
+
+def get_key():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
     try:
-        ChannelFactoryInitialize(0, "eth0")
-    except:
-        pass # Might be initialized
+        tty.setraw(sys.stdin.fileno())
+        rlist, _, _ = select.select([sys.stdin], [], [], 0.01)
+        if rlist:
+            key = sys.stdin.read(1)
+            return key
+        return None
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+def main():
+    print("--- Unitree/Inspire Hand Control (Python) ---")
     
-    hands = HandController()
+    if len(sys.argv) < 2:
+        print("Usage: python3 test_hands.py <network_interface> (e.g. eth0)")
+        # Defaulting to 0/eth0 for convenience inside IDE usually requires logic
+        # But user follows C++ example which demands argv[1].
+        # We will try to init default if not provided, for ease of use.
+        print("Constructing default channel...")
+        ChannelFactoryInitialize(0)
+    else:
+        ChannelFactoryInitialize(0, sys.argv[1])
+
+    hand_input = input("Select Hand (L/R): ").upper()
+    if hand_input not in ['L', 'R']:
+        print("Invalid hand. Defaulting to R.")
+        hand_input = 'R'
+        
+    controller = HandController(hand_input)
     
-    print("\n[1] Testing Open Hands (Right)...")
-    hands.open_hand('r')
-    time.sleep(2)
+    print("\nCommands:")
+    print("  r - Rotate (Wave)")
+    print("  g - Grip (Close)")
+    print("  s - Stop (Open)")
+    print("  q - Quit")
     
-    print("\n[2] Testing Close Hands (Right)...")
-    hands.close_hand('r')
-    time.sleep(2)
+    current_state = 'STOP'
     
-    print("\n[3] Testing Peace Sign (Right)...")
-    hands.gesture('r', 'peace')
-    time.sleep(2)
+    try:
+        while True:
+            # Check Input
+            key = get_key()
+            if key:
+                if key == 'q':
+                    break
+                elif key == 'r':
+                    print("State: ROTATE")
+                    current_state = 'ROTATE'
+                elif key == 'g':
+                    print("State: GRIP")
+                    controller.grip_hand() # Send once to ensure lock? or hold state?
+                    current_state = 'GRIP'
+                elif key == 's':
+                    print("State: STOP")
+                    controller.stop_motors()
+                    current_state = 'STOP'
+            
+            # Loop Action
+            if current_state == 'ROTATE':
+                controller.rotate_motors()
+            elif current_state == 'GRIP':
+                # Re-send Grip to keep valid?
+                controller.grip_hand()
+            elif current_state == 'STOP':
+                # Re-send Stop?
+                controller.stop_motors()
+                
+            # Prevent busy loop if just holding (optional sleep handled in methods)
+            
+    except KeyboardInterrupt:
+        pass
     
-    print("\n[4] Testing Open Hands (Left)...")
-    hands.open_hand('l')
-    time.sleep(2)
-    
-    print("--------------------------------------------------")
-    print("Test Complete.")
+    print("Exiting...")
+    controller.stop_motors()
 
 if __name__ == "__main__":
-    test_hands()
+    main()
