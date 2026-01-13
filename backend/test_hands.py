@@ -44,8 +44,8 @@ class HandController:
         self.crc = CRC()
 
         # Initialize Message
-        motor_cmds = [MotorCmd_(mode=1, q=0.0, dq=0.0, tau=0.0, kp=0.0, kd=0.0, reserve=[0]*3) for _ in range(TOTAL_MOTORS)]
-        self.msg = HandCmd_(motor_cmd=motor_cmds, reserve=[0]*4)
+        motor_cmds = [MotorCmd_(mode=1, q=0.0, dq=0.0, tau=0.0, kp=0.0, kd=0.0, reserve=0) for _ in range(TOTAL_MOTORS)]
+        self.msg = HandCmd_(motor_cmds, [0]*4)
         
         # Init default values
         for i in range(TOTAL_MOTORS):
