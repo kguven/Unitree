@@ -8,8 +8,8 @@ from dataclasses import dataclass
 
 # --- Unitree SDK & IDL Definitions ---
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelFactoryInitialize
-from unitree_sdk2py.idl.unitree_go.msg.dds_ import MotorCmds_
-from unitree_sdk2py.idl.unitree_go.msg.dds_ import MotorCmd_
+from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_
+from unitree_sdk2py.idl.unitree_hg.msg.dds_ import MotorCmd_
 from unitree_sdk2py.utils.crc import CRC
 
 # Constants
@@ -38,14 +38,14 @@ class HandController:
         self.topic = "rt/inspire/cmd"
         
         print(f"Initializing G1 Hand Publisher on topic: {self.topic}")
-        self.publisher = ChannelPublisher(self.topic, MotorCmds_)
+        self.publisher = ChannelPublisher(self.topic, HandCmd_)
         self.publisher.Init()
         
         self.crc = CRC()
 
         # Initialize Message
-        self.msg = MotorCmds_()
-        self.msg.motor_cmd = [MotorCmd_(mode=1, q=0.0, dq=0.0, tau=0.0, kp=0.0, kd=0.0, reserve=[0]*3) for _ in range(TOTAL_MOTORS)]
+        motor_cmds = [MotorCmd_(mode=1, q=0.0, dq=0.0, tau=0.0, kp=0.0, kd=0.0, reserve=[0]*3) for _ in range(TOTAL_MOTORS)]
+        self.msg = HandCmd_(motor_cmd=motor_cmds, reserve=[0]*4)
         
         # Init default values
         for i in range(TOTAL_MOTORS):
