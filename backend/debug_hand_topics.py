@@ -2,18 +2,14 @@ import time
 import sys
 import threading
 from unitree_sdk2py.core.channel import ChannelSubscriber, ChannelFactoryInitialize
-from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandState_
-try:
-    from unitree_sdk2py.idl.unitree_hg.msg.dds_ import MotorStates_
-except ImportError:
-    MotorStates_ = None
+from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandState_, LowState_
 
 # List of potential topics to check
 TOPICS = [
     "rt/inspire/state",
     "rt/inspire_hand/state/r",
     "rt/inspire_hand/state/l",
-    "rt/inspire/cmd" # Just to check if we can hear commands (loopback)
+    "rt/inspire/cmd"
 ]
 
 class TopicSniffer:
@@ -29,18 +25,25 @@ class TopicSniffer:
         if not self.received:
             print(f"\n[SUCCESS] Received data on topic: {self.topic}")
             print(f"  Type: {type(msg)}")
+            if hasattr(msg, 'motor_state'):
+                print(f"  Motor Count: {len(msg.motor_state)}")
             self.received = True
 
 def main():
-    print("--- Hand Topic Sniffer ---")
+    print("--- Hand Topic Sniffer v2 ---")
+    if len(sys.argv) < 2:
+        print("Usage: python3 debug_hand_topics.py <network_interface>")
+    
     ChannelFactoryInitialize(0)
     
     sniffers = []
     
     # Check HandState_ topics
     for t in TOPICS:
-        # We try HandState_ first
         sniffers.append(TopicSniffer(t, HandState_))
+        
+    # Check LowState as well
+    sniffers.append(TopicSniffer("rt/lowstate", LowState_))
         
     print("Listening for 10 seconds...")
     time.sleep(10)
