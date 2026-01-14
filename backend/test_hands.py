@@ -103,18 +103,31 @@ def main():
     print("--- Unitree G1 Inspire Hand Control ---")
     
     if len(sys.argv) < 2:
-        print("Usage: python3 test_hands.py <network_interface> [hand: r/l]")
+        print("Usage: python3 test_hands.py <network_interface>")
         ChannelFactoryInitialize(0)
-        hand_sel = 'r'
     else:
         ChannelFactoryInitialize(0, sys.argv[1])
-        hand_sel = sys.argv[2] if len(sys.argv) > 2 else 'r'
 
-    print(f"Selected Hand: {hand_sel.upper()}")
-        
-    controller = HandController(hand=hand_sel)
-    
-    print("\nCommands:")
+    hands = []
+    # Initialize both hands
+    print("Initializing Hand Controllers...")
+    try:
+        r_hand = HandController('r')
+        hands.append(r_hand)
+    except Exception as e:
+        print(f"Failed to init Right Hand: {e}")
+
+    try:
+        l_hand = HandController('l')
+        hands.append(l_hand)
+    except Exception as e:
+        print(f"Failed to init Left Hand: {e}")
+
+    if not hands:
+        print("No hands initialized. Exiting.")
+        return
+
+    print("\nCommands (Applied to BOTH hands):")
     print("  o - Open")
     print("  c - Close")
     print("  w - Wave")
@@ -128,13 +141,15 @@ def main():
                 if key == 'q':
                     break
                 elif key == 'o':
-                    controller.set_open()
+                    for h in hands: h.set_open()
                 elif key == 'c':
-                    controller.set_close()
+                    for h in hands: h.set_close()
                 elif key == 'w':
-                    controller.wave()
+                    for h in hands: h.wave()
                 elif key == 's':
-                    controller.print_status()
+                    for h in hands: 
+                        print(f"[{h.hand.upper()}] ", end="")
+                        h.print_status()
             time.sleep(0.01)
 
             
@@ -142,6 +157,10 @@ def main():
         pass
     
     print("Exiting...")
+
+
+            
+
 
 if __name__ == "__main__":
     main()
