@@ -4,6 +4,8 @@ from flask import Flask, render_template, request, jsonify
 
 # Add the parent directory to sys.path to allow importing backend modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Add unitree_sdk2_python to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../unitree_sdk2_python')))
 
 from backend.robot_controller import RobotController
 
