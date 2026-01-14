@@ -199,7 +199,7 @@ class RobotController:
         self.hands.open_hand()
 
         # Camera Controller
-        self.camera = camera.RealSenseCamera()
+        self.camera = camera.CameraCapture()
 
         # Arm Control (Persistent Session)
         print("[Robot] Initializing Arm Control Interface...")

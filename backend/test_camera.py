@@ -5,17 +5,51 @@ import time
 # Add parent directory to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from backend.camera import RealSenseCamera
+
 
 def test_camera():
     print("--------------------------------------------------")
     print("Running RealSense Camera Test...")
     print("--------------------------------------------------")
     
-    cam = RealSenseCamera()
-    
-    print("\n[1] Starting Camera...")
-    cam.start()
+    # Try to initialize ChannelFactory (Required for Network Camera)
+    try:
+        from unitree_sdk2py.core.channel import ChannelFactoryInitialize
+        if len(sys.argv) > 1:
+            ChannelFactoryInitialize(0, sys.argv[1])
+        else:
+            ChannelFactoryInitialize(0)
+    except ImportError:
+        print("SDK not found. Camera might fail if network based.")
+
+    # With Context Manager
+    from backend.camera import CameraCapture
+    with CameraCapture() as cam:
+        if not cam.is_initialized:
+            print("FAIL: Camera failed to start.")
+            return
+
+        print("PASS: Camera started.")
+        print(f"Info: {cam.get_frame_info()}")
+        
+        print("\n[2] Waiting for auto-exposure stabilization (2s)...")
+        time.sleep(2)
+        
+        print("\n[3] Capturing Frame 1...")
+        img1 = cam.capture_frame()
+        if img1 is not None:
+             print(f"PASS: Frame 1 captured. Shape: {img1.shape}")
+             # Save test image
+             import cv2
+             cv2.imwrite('test_frame_1.jpg', img1)
+             print("Saved to test_frame_1.jpg")
+        else:
+             print("FAIL: Frame 1 capture failed.")
+
+        return # End here for updated test
+
+    # Legacy code below unreachable
+
     
     if not cam.is_streaming:
         print("FAIL: Camera failed to start.")
