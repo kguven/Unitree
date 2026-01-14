@@ -57,10 +57,15 @@ def trigger_action():
 
 @app.route('/api/status', methods=['GET'])
 def status():
-    # Mock battery for now. In real implementation, read from hardware.
+    # Read from hardware
+    batt_status = robot.get_battery_status()
+    # If invalid, maybe keep old behavior or show 0? 
+    # Let's pass the whole dict or just percentage.
+    # Frontend expects "battery": int
     return jsonify({
         "connection": "ok",
-        "battery": 87, 
+        "battery": batt_status.get('soc', 0), 
+        "battery_detail": batt_status,
         "chat_active": robot.chat_active,
         "photo_active": robot.photo_active
     })

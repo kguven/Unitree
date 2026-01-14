@@ -35,6 +35,7 @@ from dataclasses import dataclass
 from . import custom
 from . import wav_helper
 from . import camera
+from .read_battery import BatteryMonitor
 
 
 
@@ -218,7 +219,19 @@ class RobotController:
         self.photo_active = False
         self.photo_interval = 60 # seconds
         self.photo_url = "http://localhost:5000/upload" # Default URL
+        self.photo_active = False
+        self.photo_interval = 60 # seconds
+        self.photo_url = "http://localhost:5000/upload" # Default URL
         self.photo_thread = None
+
+        # Battery Monitor
+        print("[Robot] Initializing Battery Monitor...")
+        try:
+             self.battery_monitor = BatteryMonitor()
+        except Exception as e:
+             print(f"Failed to init battery monitor: {e}")
+             self.battery_monitor = None
+
 
     def _low_state_handler(self, msg: LowState_):
         self.state_container["low_state"] = msg
@@ -426,6 +439,10 @@ class RobotController:
         self.camera.stop()
         print("Photo loop stopped.")
 
+    def get_battery_status(self):
+        if self.battery_monitor:
+            return self.battery_monitor.get_status()
+        return {"soc": 0, "voltage": 0, "current": 0, "valid": False}
 
     # --- SAFE ARM CONTROL ---
     

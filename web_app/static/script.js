@@ -194,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
             statusConn.classList.remove('disconnected');
             statusConn.innerText = "Connected";
 
-            if (data.battery) {
-                statusBatt.innerText = `Battery: ${data.battery}%`;
+            if (data.battery !== undefined) {
+                statusBatt.innerText = `${data.battery}%`;
             }
 
             // Sync toggle button state if needed (in case changed from elsewhere)
