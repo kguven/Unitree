@@ -17,16 +17,21 @@ class BatteryMonitor:
 
     def print_status(self):
         if self.latest_msg:
-            # Adjust fields based on BmsState_ definition. 
-            print(f"Battery SoC: {self.latest_msg.soc}% | Voltage: {self.latest_msg.voltage}mV | Current: {self.latest_msg.current}mA")
+            # BmsState_ has 'soc' (uint8), 'current' (int32), 'bmsvoltage' (array[uint32, 3])
+            # Assuming bmsvoltage[0] is the main pack voltage in mV? 
+            voltage = self.latest_msg.bmsvoltage[0] if len(self.latest_msg.bmsvoltage) > 0 else 0
+            current = self.latest_msg.current
+            soc = self.latest_msg.soc
+            print(f"Battery SoC: {soc}% | Voltage: {voltage}mV | Current: {current}mA")
         else:
             print("Waiting for battery data...")
 
     def get_status(self):
         if self.latest_msg:
-            return {
+             voltage = self.latest_msg.bmsvoltage[0] if len(self.latest_msg.bmsvoltage) > 0 else 0
+             return {
                 "soc": self.latest_msg.soc,
-                "voltage": self.latest_msg.voltage, # mV
+                "voltage": voltage, # mV
                 "current": self.latest_msg.current, # mA
                 "valid": True
             }
