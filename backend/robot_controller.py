@@ -406,7 +406,7 @@ class RobotController:
                 print("[Photo] Capturing photo...")
                 image_data = self.camera.capture_frame()
                 
-                if image_data:
+                if image_data is not None:
                     # Upload
                     if self.photo_url:
                         # Check for Google Drive Link

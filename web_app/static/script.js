@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings Modal Logic
     async function openSettings() {
         const settingsModal = document.getElementById("settings-modal");
-        settingsModal.style.display = "block";
+        settingsModal.style.display = "flex";
         // Fetch current settings
         try {
             const res = await fetch('/api/photo_settings');
