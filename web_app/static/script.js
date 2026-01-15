@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSettings = document.getElementById('btn-12');
 
     // Modal Elements
-    const modal = document.getElementById("settings-modal");
-    const span = document.getElementsByClassName("close")[0];
+    const settingsModal = document.getElementById("settings-modal");
     const saveSettingsBtn = document.getElementById("save-settings");
     const photoUrlInput = document.getElementById("photo-url");
     const photoIntervalInput = document.getElementById("photo-interval");
@@ -96,30 +95,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-
     // Live Camera Logic
-    function toggleLiveCamera(btn) {
+    function toggleLiveCamera(btn, forceState = null) {
         const isCurrentlyActive = btn.classList.contains('active');
-        const newState = !isCurrentlyActive;
-        const liveContainer = document.getElementById('live-camera-container');
+        const newState = (forceState !== null) ? forceState : !isCurrentlyActive;
+
+        const cameraPanel = document.getElementById('camera-panel');
+        const controlsGrid = document.getElementById('controls-grid');
         const liveVideo = document.getElementById('live-video');
+        const statusText = document.getElementById('camera-status');
 
         if (newState) {
-            btn.classList.add('active');
-            btn.classList.remove('inactive');
-            btn.querySelector('span').innerText = "Live Camera: ON";
+            if (!isCurrentlyActive) {
+                btn.classList.add('active');
+                btn.classList.remove('inactive');
+                btn.querySelector('span').innerText = "Live Camera: ON";
 
-            // Start Stream
-            liveContainer.style.display = 'block';
-            liveVideo.src = "/video_feed";
+                // Switch to Split View
+                if (cameraPanel) cameraPanel.style.display = 'flex';
+                // Shrink controls to a list-like sidebar
+                if (controlsGrid) {
+                    controlsGrid.style.flex = '0 0 250px';
+                    controlsGrid.style.gridTemplateColumns = '1fr';
+                }
+
+                if (statusText) statusText.innerText = "Connection established.";
+                if (liveVideo) liveVideo.src = "/video_feed";
+            }
         } else {
             btn.classList.add('inactive');
             btn.classList.remove('active');
             btn.querySelector('span').innerText = "Live Camera: OFF";
 
-            // Stop Stream
-            liveContainer.style.display = 'none';
-            liveVideo.src = "";
+            // Revert Normal View
+            if (cameraPanel) cameraPanel.style.display = 'none';
+            if (controlsGrid) {
+                controlsGrid.style.flex = '1';
+                controlsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            }
+
+            if (liveVideo) liveVideo.src = "";
+            if (statusText) statusText.innerText = "Disconnected";
         }
     }
 
@@ -153,73 +169,60 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.remove('inactive');
             btn.querySelector('span').innerText = "Photo Upload: ON";
             btn.querySelector('i').className = "fas fa-camera";
-            // Removed startCameraPreview() as requested
         } else {
             btn.classList.add('inactive');
             btn.classList.remove('active');
             btn.querySelector('span').innerText = "Photo Upload: OFF";
             btn.querySelector('i').className = "fas fa-camera-retro";
-            // Removed stopCameraPreview()
         }
     }
 
     // Settings Modal Logic
     async function openSettings() {
-        const settingsModal = document.getElementById("settings-modal");
-        settingsModal.style.display = "flex";
-        // Fetch current settings
-        try {
-            const res = await fetch('/api/photo_settings');
-            const data = await res.json();
-            photoUrlInput.value = data.url;
-            photoIntervalInput.value = data.interval;
-        } catch (e) { console.error(e); }
+        if (settingsModal) {
+            settingsModal.style.display = "flex";
+            // Fetch current settings
+            try {
+                const res = await fetch('/api/photo_settings');
+                const data = await res.json();
+                photoUrlInput.value = data.url;
+                photoIntervalInput.value = data.interval;
+            } catch (e) { console.error(e); }
+        }
     }
-
-    // Generic Modal Close Logic
-    const settingsModal = document.getElementById("settings-modal");
-    const cameraModal = document.getElementById("camera-modal");
 
     // Close Buttons
-    document.getElementById("close-settings").onclick = () => {
-        settingsModal.style.display = "none";
-    }
-    document.getElementById("close-camera").onclick = () => {
-        cameraModal.style.display = "none";
-        // Also turn off the toggle button state
-        const btn = document.getElementById('btn-13');
-        toggleLiveCamera(btn, false); // force off
+    if (document.getElementById("close-settings")) {
+        document.getElementById("close-settings").onclick = () => {
+            if (settingsModal) settingsModal.style.display = "none";
+        }
     }
 
     // Windows click outside to close
     window.onclick = function (event) {
-        if (event.target == settingsModal) {
+        if (settingsModal && event.target == settingsModal) {
             settingsModal.style.display = "none";
-        }
-        if (event.target == cameraModal) {
-            cameraModal.style.display = "none";
-            const btn = document.getElementById('btn-13');
-            toggleLiveCamera(btn, false);
         }
     }
 
-    saveSettingsBtn.onclick = async function () {
-        const url = photoUrlInput.value;
-        const interval = photoIntervalInput.value;
+    if (saveSettingsBtn) {
+        saveSettingsBtn.onclick = async function () {
+            const url = photoUrlInput.value;
+            const interval = photoIntervalInput.value;
 
-        try {
-            await fetch('/api/photo_settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url, interval: interval })
-            });
-            settingsModal.style.display = "none";
-            alert("Settings saved!");
-        } catch (e) {
-            alert("Failed to save settings");
+            try {
+                await fetch('/api/photo_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url, interval: interval })
+                });
+                settingsModal.style.display = "none";
+                alert("Settings saved!");
+            } catch (e) {
+                alert("Failed to save settings");
+            }
         }
     }
-
 
     function updateToggleUI(btn, active) {
         if (active) {
@@ -243,10 +246,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/api/status');
             const data = await response.json();
 
-            statusConn.classList.remove('disconnected');
-            statusConn.innerText = "Connected";
+            if (statusConn) {
+                statusConn.classList.remove('disconnected');
+                statusConn.innerText = "Connected";
+            }
 
-            if (data.battery !== undefined) {
+            if (statusBatt && data.battery !== undefined) {
                 statusBatt.innerText = `${data.battery}%`;
             }
 
@@ -265,8 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (err) {
-            statusConn.classList.add('disconnected');
-            statusConn.innerText = "Disconnected";
+            if (statusConn) {
+                statusConn.classList.add('disconnected');
+                statusConn.innerText = "Disconnected";
+            }
         }
     }, 5000);
 });
