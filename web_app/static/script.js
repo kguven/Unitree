@@ -95,39 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Camera Preview Loop
-    let cameraInterval = null;
-    const cameraSection = document.getElementById('camera-section');
-    const latestPhotoImg = document.getElementById('latest-photo');
-    const photoTimestamp = document.getElementById('photo-timestamp');
 
-    function startCameraPreview() {
-        if (cameraInterval) clearInterval(cameraInterval);
-        cameraSection.style.display = 'block';
-
-        // Refresh immediately
-        refreshCameraImage();
-
-        cameraInterval = setInterval(refreshCameraImage, 2000);
-    }
-
-    function stopCameraPreview() {
-        if (cameraInterval) clearInterval(cameraInterval);
-        cameraSection.style.display = 'none';
-        cameraInterval = null;
-    }
-
-    function refreshCameraImage() {
-        // Cache buster
-        const timestamp = new Date().getTime();
-        latestPhotoImg.src = `/static/uploads/latest.jpg?t=${timestamp}`;
-        // Verify if image loads successfully?
-        latestPhotoImg.onerror = () => {
-            // Maybe show placeholder or keep old logic
-            // console.log("No latest image found yet");
-        };
-        photoTimestamp.innerText = "Last checked: " + new Date().toLocaleTimeString();
-    }
 
     // Live Camera Logic
     function toggleLiveCamera(btn) {
@@ -185,13 +153,13 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.remove('inactive');
             btn.querySelector('span').innerText = "Photo Upload: ON";
             btn.querySelector('i').className = "fas fa-camera";
-            startCameraPreview();
+            // Removed startCameraPreview() as requested
         } else {
             btn.classList.add('inactive');
             btn.classList.remove('active');
             btn.querySelector('span').innerText = "Photo Upload: OFF";
             btn.querySelector('i').className = "fas fa-camera-retro";
-            stopCameraPreview();
+            // Removed stopCameraPreview()
         }
     }
 
