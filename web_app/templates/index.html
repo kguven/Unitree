@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body>
     <header>
         <div class="status-item">
@@ -88,12 +90,32 @@
             <span>Photo Upload: OFF</span>
         </button>
 
+        <!-- Button 13: Live Camera Toggle -->
+        <button id="btn-13" class="cmd-btn btn-toggle inactive">
+            <i class="fas fa-video"></i>
+            <span>Live Camera: OFF</span>
+        </button>
+
         <!-- Button 12: Settings -->
         <button id="btn-12" class="cmd-btn btn-grey">
             <i class="fas fa-cog"></i>
             <span>Settings</span>
         </button>
     </main>
+
+    <!-- Live Camera Container -->
+    <div id="live-camera-container" class="camera-container" style="display:none; text-align:center; margin-top:20px;">
+        <h3>Live Feed</h3>
+        <img id="live-video" src="" alt="Live Video" style="max-width:90%; border-radius:10px; border: 2px solid red;">
+    </div>
+
+    <!-- Camera View Section -->
+    <div id="camera-section" class="camera-container" style="display:none; text-align:center; margin-top:20px;">
+        <h3>Latest Photo</h3>
+        <img id="latest-photo" src="" alt="Latest Photo"
+            style="max-width:90%; border-radius:10px; border: 2px solid #333;">
+        <p id="photo-timestamp" style="color:#888; font-size:0.9em;"></p>
+    </div>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal">
@@ -114,4 +136,5 @@
 
     <script src="/static/script.js"></script>
 </body>
+
 </html>

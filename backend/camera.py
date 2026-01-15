@@ -14,6 +14,7 @@ import os
 from PIL import Image
 from typing import Optional
 import logging
+import threading
 from config import CAMERA_INDEX, FRAME_WIDTH, FRAME_HEIGHT, FPS
 
 # --- Unitree SDK Import Logic ---
@@ -67,6 +68,7 @@ class CameraCapture:
         self.current_service = None
         self.is_initialized = False
         self.logger = logging.getLogger(__name__)
+        self.lock = threading.Lock()
         
     def initialize(self) -> bool:
         """
@@ -107,32 +109,33 @@ class CameraCapture:
         Returns:
             numpy.ndarray: Captured frame or None if failed
         """
-        if not self.is_initialized or self.client is None:
-            self.logger.error("Camera not initialized")
-            # Try lazy init?
-            if self.initialize():
-                 pass # Retry below
-            else:
-                 return None
-            
-        try:
-            # RPC Call
-            code, data = self.client.GetImageSample()
-            
-            if code != 0 or not data:
-                self.logger.warning(f"Failed to capture frame (Code {code})")
+        with self.lock:
+            if not self.is_initialized or self.client is None:
+                self.logger.error("Camera not initialized")
+                # Try lazy init?
+                if self.initialize():
+                     pass # Retry below
+                else:
+                     return None
+                
+            try:
+                # RPC Call
+                code, data = self.client.GetImageSample()
+                
+                if code != 0 or not data:
+                    self.logger.warning(f"Failed to capture frame (Code {code})")
+                    return None
+                
+                # Data is bytes (JPEG usually). Decode to OpenCV
+                image_bytes = bytes(data)
+                np_arr = np.frombuffer(image_bytes, np.uint8)
+                frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                
+                return frame
+                
+            except Exception as e:
+                self.logger.error(f"Frame capture failed: {e}")
                 return None
-            
-            # Data is bytes (JPEG usually). Decode to OpenCV
-            image_bytes = bytes(data)
-            np_arr = np.frombuffer(image_bytes, np.uint8)
-            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-            
-            return frame
-            
-        except Exception as e:
-            self.logger.error(f"Frame capture failed: {e}")
-            return None
     
     def frame_to_base64(self, frame: np.ndarray, format: str = 'JPEG') -> Optional[str]:
         """

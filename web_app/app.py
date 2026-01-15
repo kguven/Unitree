@@ -1,11 +1,16 @@
 import sys
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 
 # Add the parent directory to sys.path to allow importing backend modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from backend.robot_controller import RobotController
+from werkzeug.utils import secure_filename
+
+# Ensure upload directory exists
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 
@@ -43,6 +48,48 @@ def photo_settings():
             "interval": robot.photo_interval,
             "url": robot.photo_url
         })
+
+        })
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"success": False, "error": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "No selected file"}), 400
+    if file:
+        filename = secure_filename(file.filename)
+        # Add timestamp to filename to prevent caching/overwriting if desired, 
+        # or keep 'photo.jpg' for 'latest'. Let's keep a history.
+        import time
+        timestamp = int(time.time())
+        save_name = f"capture_{timestamp}.jpg"
+        filepath = os.path.join(UPLOAD_FOLDER, save_name)
+        file.save(filepath)
+        
+        # Also save as 'latest.jpg' for easy access
+        latest_path = os.path.join(UPLOAD_FOLDER, "latest.jpg")
+        import shutil
+        shutil.copy2(filepath, latest_path)
+        
+        return jsonify({"success": True, "filename": save_name}), 200
+        return jsonify({"success": True, "filename": save_name}), 200
+
+def gen_frames():
+    while True:
+        frame_bytes = robot.get_latest_frame()
+        if frame_bytes:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        else:
+            # Yield empty or placeholder? Just sleep to prevent CPU burn
+            import time
+            time.sleep(0.1)
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/api/trigger_action', methods=['POST'])
 def trigger_action():

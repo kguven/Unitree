@@ -5,6 +5,7 @@ import os
 import requests
 import datetime
 import sys
+import cv2
 
 # Add Inspire Hand SDK to path
 sys.path.append(os.path.join(os.path.dirname(__file__), "inspire_hand_ws/inspire_hand_sdk"))
@@ -204,9 +205,18 @@ class RobotController:
         # Arm Control (Persistent Session)
         print("[Robot] Initializing Arm Control Interface...")
         try:
-            ChannelFactoryInitialize(0)
+            # Match test_camera.py: Try to init channel factory (safely)
+            # Check if we have env var for interface (like mouth.py) or default to 0
+            # test_camera.py just calls it.
+            try:
+                ChannelFactoryInitialize(0)
+                print("[Robot] ChannelFactory initialized (0).")
+            except Exception as e:
+                # If already initialized, it might throw, or just work?
+                # Usually it throws Runtime error if called twice.
+                print(f"[Robot] ChannelFactory init note: {e}")
         except:
-            pass # Might be initialized globally or by another module
+            pass # Failsafe
             
         self.arm_sdk_publisher = ChannelPublisher("rt/arm_sdk", LowCmd_)
         self.arm_sdk_publisher.Init()
@@ -438,6 +448,26 @@ class RobotController:
         # Stop Camera when loop ends
         self.camera.stop()
         print("Photo loop stopped.")
+
+    def get_latest_frame(self):
+        """
+        Get the latest frame from the camera as JPEG bytes.
+        Thread-safe via CameraCapture lock.
+        """
+        try:
+            # Check if we need to start the camera (if photo loop isn't running)
+            if not self.photo_active and not self.camera.is_initialized:
+                 self.camera.start()
+            
+            frame = self.camera.capture_frame()
+            if frame is not None:
+                ret, buffer = cv2.imencode('.jpg', frame)
+                if ret:
+                    return buffer.tobytes()
+        except Exception as e:
+            print(f"Error getting frame: {e}")
+            
+        return None
 
     def get_battery_status(self):
         if self.battery_monitor:

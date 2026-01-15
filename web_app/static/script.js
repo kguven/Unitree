@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 openSettings();
                 return;
             }
+            if (btnId === 'btn-13') {
+                toggleLiveCamera(btn);
+                return;
+            }
 
             // Visual feedback
             btn.classList.add('processing');
@@ -91,6 +95,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Camera Preview Loop
+    let cameraInterval = null;
+    const cameraSection = document.getElementById('camera-section');
+    const latestPhotoImg = document.getElementById('latest-photo');
+    const photoTimestamp = document.getElementById('photo-timestamp');
+
+    function startCameraPreview() {
+        if (cameraInterval) clearInterval(cameraInterval);
+        cameraSection.style.display = 'block';
+
+        // Refresh immediately
+        refreshCameraImage();
+
+        cameraInterval = setInterval(refreshCameraImage, 2000);
+    }
+
+    function stopCameraPreview() {
+        if (cameraInterval) clearInterval(cameraInterval);
+        cameraSection.style.display = 'none';
+        cameraInterval = null;
+    }
+
+    function refreshCameraImage() {
+        // Cache buster
+        const timestamp = new Date().getTime();
+        latestPhotoImg.src = `/static/uploads/latest.jpg?t=${timestamp}`;
+        // Verify if image loads successfully?
+        latestPhotoImg.onerror = () => {
+            // Maybe show placeholder or keep old logic
+            // console.log("No latest image found yet");
+        };
+        photoTimestamp.innerText = "Last checked: " + new Date().toLocaleTimeString();
+    }
+
+    // Live Camera Logic
+    function toggleLiveCamera(btn) {
+        const isCurrentlyActive = btn.classList.contains('active');
+        const newState = !isCurrentlyActive;
+        const liveContainer = document.getElementById('live-camera-container');
+        const liveVideo = document.getElementById('live-video');
+
+        if (newState) {
+            btn.classList.add('active');
+            btn.classList.remove('inactive');
+            btn.querySelector('span').innerText = "Live Camera: ON";
+
+            // Start Stream
+            liveContainer.style.display = 'block';
+            liveVideo.src = "/video_feed";
+        } else {
+            btn.classList.add('inactive');
+            btn.classList.remove('active');
+            btn.querySelector('span').innerText = "Live Camera: OFF";
+
+            // Stop Stream
+            liveContainer.style.display = 'none';
+            liveVideo.src = "";
+        }
+    }
+
     // Specific logic for Photo Toggle (Button 11)
     async function togglePhoto(btn) {
         const isCurrentlyActive = btn.classList.contains('active');
@@ -121,11 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.classList.remove('inactive');
             btn.querySelector('span').innerText = "Photo Upload: ON";
             btn.querySelector('i').className = "fas fa-camera";
+            startCameraPreview();
         } else {
             btn.classList.add('inactive');
             btn.classList.remove('active');
             btn.querySelector('span').innerText = "Photo Upload: OFF";
             btn.querySelector('i').className = "fas fa-camera-retro";
+            stopCameraPreview();
         }
     }
 
