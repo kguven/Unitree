@@ -49,7 +49,7 @@ def photo_settings():
             "url": robot.photo_url
         })
 
-        })
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -74,7 +74,7 @@ def upload_file():
         shutil.copy2(filepath, latest_path)
         
         return jsonify({"success": True, "filename": save_name}), 200
-        return jsonify({"success": True, "filename": save_name}), 200
+
 
 def gen_frames():
     while True:
