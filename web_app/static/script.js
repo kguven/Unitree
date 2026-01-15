@@ -96,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Live Camera Logic
+    // Live Camera Logic
     function toggleLiveCamera(btn, forceState = null) {
         const isCurrentlyActive = btn.classList.contains('active');
         const newState = (forceState !== null) ? forceState : !isCurrentlyActive;
@@ -119,8 +120,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     controlsGrid.style.gridTemplateColumns = '1fr';
                 }
 
-                if (statusText) statusText.innerText = "Connection established.";
-                if (liveVideo) liveVideo.src = "/video_feed";
+                if (statusText) {
+                    statusText.style.display = 'block';
+                    statusText.innerText = "Loading stream...";
+                }
+
+                if (liveVideo) {
+                    // Reset handlers first to avoid duplicates
+                    liveVideo.onload = null;
+                    liveVideo.onerror = null;
+
+                    // Handler to hide text when video loads
+                    liveVideo.onload = function () {
+                        console.log("Video Stream Loaded");
+                        if (statusText) statusText.style.display = 'none';
+                    };
+
+                    // Handler to show error
+                    liveVideo.onerror = function () {
+                        console.error("Video Stream Failed");
+                        if (statusText) {
+                            statusText.style.display = 'block';
+                            statusText.innerText = "Stream Offline";
+                        }
+                    };
+
+                    // Start Stream
+                    liveVideo.src = "/video_feed";
+                }
             }
         } else {
             btn.classList.add('inactive');
@@ -134,7 +161,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 controlsGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
             }
 
-            if (liveVideo) liveVideo.src = "";
+            if (liveVideo) {
+                liveVideo.src = "";
+                liveVideo.onload = null;
+                liveVideo.onerror = null;
+            }
             if (statusText) statusText.innerText = "Disconnected";
         }
     }
