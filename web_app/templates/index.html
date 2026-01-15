@@ -23,90 +23,99 @@
         </div>
     </header>
 
-    <main>
-        <!-- Button 1: The Giver -->
-        <button id="btn-1" class="cmd-btn btn-green">
-            <i class="fas fa-hand-holding-heart"></i>
-            <span>The Giver</span>
-        </button>
+    <div id="main-content" style="display: flex; flex: 1; overflow: hidden;">
+        <!-- Controls Side -->
+        <div id="controls-grid"
+            style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(2, 1fr); grid-gap: 15px; padding: 15px; transition: all 0.3s;">
+            <!-- Button 1: The Giver -->
+            <button id="btn-1" class="cmd-btn btn-green">
+                <i class="fas fa-hand-holding-heart"></i>
+                <span>The Giver</span>
+            </button>
 
-        <!-- Button 2: Robot Sings -->
-        <button id="btn-2" class="cmd-btn btn-purple">
-            <i class="fas fa-music"></i>
-            <span>Robot Sings</span>
-        </button>
+            <!-- Button 2: Robot Sings -->
+            <button id="btn-2" class="cmd-btn btn-purple">
+                <i class="fas fa-music"></i>
+                <span>Robot Sings</span>
+            </button>
 
-        <!-- Button 3: Stand-Up Comedy -->
-        <button id="btn-3" class="cmd-btn btn-yellow">
-            <i class="fas fa-laugh-squint"></i>
-            <span>Stand-Up Comedy</span>
-        </button>
+            <!-- Button 3: Stand-Up Comedy -->
+            <button id="btn-3" class="cmd-btn btn-yellow">
+                <i class="fas fa-laugh-squint"></i>
+                <span>Stand-Up Comedy</span>
+            </button>
 
-        <!-- Button 4: Living Statue -->
-        <button id="btn-4" class="cmd-btn btn-red">
-            <i class="fas fa-ghost"></i>
-            <span>Living Statue</span>
-        </button>
+            <!-- Button 4: Living Statue -->
+            <button id="btn-4" class="cmd-btn btn-red">
+                <i class="fas fa-ghost"></i>
+                <span>Living Statue</span>
+            </button>
 
-        <!-- Button 5: Fortune Teller -->
-        <button id="btn-5" class="cmd-btn btn-blue">
-            <i class="fas fa-crystal-ball"></i>
-            <span>Fortune Teller</span>
-        </button>
+            <!-- Button 5: Fortune Teller -->
+            <button id="btn-5" class="cmd-btn btn-blue">
+                <i class="fas fa-crystal-ball"></i>
+                <span>Fortune Teller</span>
+            </button>
 
-        <!-- Button 6: Selfie Mode -->
-        <button id="btn-6" class="cmd-btn btn-cyan">
-            <i class="fas fa-camera"></i>
-            <span>Selfie Mode</span>
-        </button>
+            <!-- Button 6: Selfie Mode -->
+            <button id="btn-6" class="cmd-btn btn-cyan">
+                <i class="fas fa-camera"></i>
+                <span>Selfie Mode</span>
+            </button>
 
-        <!-- Button 7: Rock-Paper-Scissors -->
-        <button id="btn-7" class="cmd-btn btn-orange">
-            <i class="fas fa-hand-rock"></i>
-            <span>R-P-S Game</span>
-        </button>
+            <!-- Button 7: Rock-Paper-Scissors -->
+            <button id="btn-7" class="cmd-btn btn-orange">
+                <i class="fas fa-hand-rock"></i>
+                <span>R-P-S Game</span>
+            </button>
 
-        <!-- Button 8: The Butler -->
-        <button id="btn-8" class="cmd-btn btn-grey">
-            <i class="fas fa-concierge-bell"></i>
-            <span>The Butler</span>
-        </button>
+            <!-- Button 8: The Butler -->
+            <button id="btn-8" class="cmd-btn btn-grey">
+                <i class="fas fa-concierge-bell"></i>
+                <span>The Butler</span>
+            </button>
 
-        <!-- Button 9: Wedding Toast -->
-        <button id="btn-9" class="cmd-btn btn-pink">
-            <i class="fas fa-glass-cheers"></i>
-            <span>Wedding Toast</span>
-        </button>
+            <!-- Button 9: Wedding Toast -->
+            <button id="btn-9" class="cmd-btn btn-pink">
+                <i class="fas fa-glass-cheers"></i>
+                <span>Wedding Toast</span>
+            </button>
 
-        <!-- Button 10: Chat Toggle -->
-        <button id="btn-10" class="cmd-btn btn-toggle inactive">
-            <i class="fas fa-microphone-slash"></i>
-            <span>Gemini Chat: OFF</span>
-        </button>
+            <!-- Button 10: Chat Toggle -->
+            <button id="btn-10" class="cmd-btn btn-toggle inactive">
+                <i class="fas fa-microphone-slash"></i>
+                <span>Gemini Chat: OFF</span>
+            </button>
 
-        <!-- Button 11: Photo Mode Toggle -->
-        <button id="btn-11" class="cmd-btn btn-toggle inactive">
-            <i class="fas fa-camera-retro"></i>
-            <span>Photo Upload: OFF</span>
-        </button>
+            <!-- Button 11: Photo Mode Toggle -->
+            <button id="btn-11" class="cmd-btn btn-toggle inactive">
+                <i class="fas fa-camera-retro"></i>
+                <span>Photo Upload: OFF</span>
+            </button>
 
-        <!-- Button 13: Live Camera Toggle -->
-        <button id="btn-13" class="cmd-btn btn-toggle inactive">
-            <i class="fas fa-video"></i>
-            <span>Live Camera: OFF</span>
-        </button>
+            <!-- Button 13: Live Camera Toggle -->
+            <button id="btn-13" class="cmd-btn btn-toggle inactive">
+                <i class="fas fa-video"></i>
+                <span>Live Camera: OFF</span>
+            </button>
 
-        <!-- Button 12: Settings -->
-        <button id="btn-12" class="cmd-btn btn-grey">
-            <i class="fas fa-cog"></i>
-            <span>Settings</span>
-        </button>
-    </main>
+            <!-- Button 12: Settings -->
+            <button id="btn-12" class="cmd-btn btn-grey">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </button>
+        </div>
 
-    <!-- Camera View Section -->
-
-
-    <!-- settings-modal used to be here, relocating to below with ID fix if needed -->
+        <!-- Live Camera Panel (Split View) -->
+        <div id="camera-panel"
+            style="display:none; flex: 2; background: #000; align-items: center; justify-content: center; border-left: 2px solid #333; position: relative;">
+            <img id="live-video" src="" alt="Live Video"
+                style="max-width: 100%; max-height: 100%; object-fit: contain;">
+            <p id="camera-status"
+                style="position: absolute; color: #fff; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px;">
+                Connecting...</p>
+        </div>
+    </div>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal">
@@ -122,19 +131,6 @@
                 <input type="number" id="photo-interval" min="10" value="60">
             </div>
             <button id="save-settings" class="btn-green">Save Settings</button>
-        </div>
-    </div>
-
-    <!-- Live Camera Modal -->
-    <div id="camera-modal" class="modal">
-        <div class="modal-content" style="width: 80%; max-width: 800px; text-align: center;">
-            <span class="close" id="close-camera">&times;</span>
-            <h2>Live Camera Feed</h2>
-            <div
-                style="min-height: 400px; background: #000; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                <img id="live-video" src="" alt="Live Video" style="width:100%; height:auto; border-radius:8px;">
-            </div>
-            <p id="camera-status" style="margin-top:10px; color:#aaa;">Connecting...</p>
         </div>
     </div>
 
