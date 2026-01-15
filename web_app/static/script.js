@@ -197,7 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Settings Modal Logic
     async function openSettings() {
-        modal.style.display = "block";
+        const settingsModal = document.getElementById("settings-modal");
+        settingsModal.style.display = "block";
         // Fetch current settings
         try {
             const res = await fetch('/api/photo_settings');
@@ -207,13 +208,30 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { console.error(e); }
     }
 
-    span.onclick = function () {
-        modal.style.display = "none";
+    // Generic Modal Close Logic
+    const settingsModal = document.getElementById("settings-modal");
+    const cameraModal = document.getElementById("camera-modal");
+
+    // Close Buttons
+    document.getElementById("close-settings").onclick = () => {
+        settingsModal.style.display = "none";
+    }
+    document.getElementById("close-camera").onclick = () => {
+        cameraModal.style.display = "none";
+        // Also turn off the toggle button state
+        const btn = document.getElementById('btn-13');
+        toggleLiveCamera(btn, false); // force off
     }
 
+    // Windows click outside to close
     window.onclick = function (event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
+        if (event.target == settingsModal) {
+            settingsModal.style.display = "none";
+        }
+        if (event.target == cameraModal) {
+            cameraModal.style.display = "none";
+            const btn = document.getElementById('btn-13');
+            toggleLiveCamera(btn, false);
         }
     }
 
@@ -227,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: url, interval: interval })
             });
-            modal.style.display = "none";
+            settingsModal.style.display = "none";
             alert("Settings saved!");
         } catch (e) {
             alert("Failed to save settings");

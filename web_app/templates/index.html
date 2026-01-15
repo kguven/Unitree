@@ -103,12 +103,6 @@
         </button>
     </main>
 
-    <!-- Live Camera Container -->
-    <div id="live-camera-container" class="camera-container" style="display:none; text-align:center; margin-top:20px;">
-        <h3>Live Feed</h3>
-        <img id="live-video" src="" alt="Live Video" style="max-width:90%; border-radius:10px; border: 2px solid red;">
-    </div>
-
     <!-- Camera View Section -->
     <div id="camera-section" class="camera-container" style="display:none; text-align:center; margin-top:20px;">
         <h3>Latest Photo</h3>
@@ -117,10 +111,12 @@
         <p id="photo-timestamp" style="color:#888; font-size:0.9em;"></p>
     </div>
 
+    <!-- settings-modal used to be here, relocating to below with ID fix if needed -->
+
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" id="close-settings">&times;</span>
             <h2>Photo Upload Settings</h2>
             <div class="form-group">
                 <label for="photo-url">Upload URL:</label>
@@ -131,6 +127,19 @@
                 <input type="number" id="photo-interval" min="10" value="60">
             </div>
             <button id="save-settings" class="btn-green">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Live Camera Modal -->
+    <div id="camera-modal" class="modal">
+        <div class="modal-content" style="width: 80%; max-width: 800px; text-align: center;">
+            <span class="close" id="close-camera">&times;</span>
+            <h2>Live Camera Feed</h2>
+            <div
+                style="min-height: 400px; background: #000; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <img id="live-video" src="" alt="Live Video" style="width:100%; height:auto; border-radius:8px;">
+            </div>
+            <p id="camera-status" style="margin-top:10px; color:#aaa;">Connecting...</p>
         </div>
     </div>
 
