@@ -461,9 +461,15 @@ class RobotController:
             
             frame = self.camera.capture_frame()
             if frame is not None:
-                ret, buffer = cv2.imencode('.jpg', frame)
+                # Resize for smoother live stream (reduce bandwidth)
+                # 640x360 is decent for preview
+                small_frame = cv2.resize(frame, (640, 360))
+                ret, buffer = cv2.imencode('.jpg', small_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
                 if ret:
                     return buffer.tobytes()
+            else:
+                 # If capture returns None repeatedly, we might have an issue
+                 pass 
         except Exception as e:
             print(f"Error getting frame: {e}")
             
