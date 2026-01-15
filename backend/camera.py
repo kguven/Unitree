@@ -15,7 +15,11 @@ from PIL import Image
 from typing import Optional
 import logging
 import threading
-from config import CAMERA_INDEX, FRAME_WIDTH, FRAME_HEIGHT, FPS
+# Camera Configuration
+CAMERA_INDEX = 0
+FRAME_WIDTH = 1280
+FRAME_HEIGHT = 720
+FPS = 30
 
 # --- Unitree SDK Import Logic ---
 possible_sdk_paths = [
