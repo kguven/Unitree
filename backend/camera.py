@@ -1,6 +1,6 @@
 """
 Camera capture module for Unitree G1 robot
-Simplified implementation using pyrealsense2 directly.
+Implemented using unitree_sdk2py.go2.video.video_client.VideoClient
 """
 
 import cv2
@@ -15,13 +15,14 @@ from typing import Optional
 import logging
 import threading
 
-# Check for pyrealsense2
+# Import VideoClient from SDK
 try:
-    import pyrealsense2 as rs
-    RS_AVAILABLE = True
+    from unitree_sdk2py.core.channel import ChannelFactoryInitialize
+    from unitree_sdk2py.go2.video.video_client import VideoClient
+    SDK_AVAILABLE = True
 except ImportError:
-    print("pyrealsense2 not found. Please install it with: pip install pyrealsense2")
-    RS_AVAILABLE = False
+    print("unitree_sdk2py not found. Please ensure the SDK is installed.")
+    SDK_AVAILABLE = False
 
 # Camera Configuration
 FRAME_WIDTH = 1280
@@ -30,89 +31,82 @@ FPS = 30
 
 class CameraCapture:
     """
-    Camera capture class using pyrealsense2
+    Camera capture class using VideoClient (Network)
     """
     
     def __init__(self, camera_index: int = 0):
         self.camera_index = camera_index
-        self.pipeline = None
-        self.config = None
+        self.client = None
         self.is_initialized = False
         self.logger = logging.getLogger(__name__)
         self.lock = threading.Lock()
         
     def initialize(self) -> bool:
         """
-        Initialize RealSense pipeline
+        Initialize VideoClient
         """
-        if not RS_AVAILABLE:
-            self.logger.error("pyrealsense2 library not available.")
+        if not SDK_AVAILABLE:
+            self.logger.error("unitree_sdk2py library not available.")
             return False
 
         if self.is_initialized:
             return True
 
         try:
-            self.pipeline = rs.pipeline()
-            self.config = rs.config()
+            # Initialize ChannelFactory if not already done
+            # Note: ChannelFactoryInitialize singleton behavior requires care
+            # We assume robot_controller or main app might have called it, 
+            # but we can try to call it safely.
+            try:
+                ChannelFactoryInitialize(0)
+            except Exception:
+                # Likely already initialized
+                pass
+
+            self.client = VideoClient()
+            self.client.SetTimeout(3.0)
+            self.client.Init()
             
-            self.logger.info(f"Configuring RealSense: {FRAME_WIDTH}x{FRAME_HEIGHT} @ {FPS}fps")
-            
-            # Enable Color Stream
-            self.config.enable_stream(
-                rs.stream.color, 
-                FRAME_WIDTH, 
-                FRAME_HEIGHT, 
-                rs.format.bgr8, 
-                FPS
-            )
-            
-            # Start pipeline
-            self.pipeline.start(self.config)
-            
-            # Warmup
-            for _ in range(10):
-                self.pipeline.wait_for_frames()
-                
+            self.logger.info("VideoClient initialized.")
             self.is_initialized = True
-            self.logger.info("RealSense camera initialized successfully.")
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to initialize RealSense: {e}")
+            self.logger.error(f"Failed to initialize VideoClient: {e}")
             self.is_initialized = False
-            self.pipeline = None
+            self.client = None
             return False
     
     def capture_frame(self) -> Optional[np.ndarray]:
         """
-        Capture a single frame from RealSense
+        Capture a single frame from VideoClient
         """
         with self.lock:
-            if not self.is_initialized or self.pipeline is None:
+            if not self.is_initialized or self.client is None:
                 # Try lazy initialization
                 self.logger.info("Camera not initialized, trying to initialize...")
                 if not self.initialize():
                     return None
                 
             try:
-                # Wait for a coherent pair of frames: depth and color
-                frames = self.pipeline.wait_for_frames(timeout_ms=5000)
-                color_frame = frames.get_color_frame()
+                code, data = self.client.GetImageSample()
                 
-                if not color_frame:
-                    self.logger.warning("No color frame received.")
+                if code != 0:
+                    self.logger.warning(f"VideoClient GetImageSample failed with code: {code}")
+                    # Allow retries or ignore occasional drops
                     return None
                 
-                # Convert images to numpy arrays
-                frame = np.asanyarray(color_frame.get_data())
+                # Convert bytes to numpy array
+                image_data = np.frombuffer(bytes(data), dtype=np.uint8)
+                # Decode JPEG/Raw data
+                frame = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
+                
+                if frame is None:
+                    self.logger.warning("Failed to decode image data.")
+                    return None
                 
                 return frame
                 
-            except RuntimeError as e:
-                self.logger.error(f"RealSense runtime error: {e}")
-                # Sometimes pipeline needs reset?
-                return None
             except Exception as e:
                 self.logger.error(f"Frame capture failed: {e}")
                 return None
@@ -151,22 +145,16 @@ class CameraCapture:
             "width": FRAME_WIDTH,
             "height": FRAME_HEIGHT,
             "fps": FPS,
-            "backend": "pyrealsense2"
+            "backend": "unitree_videoclient"
         }
     
     def release(self):
         """
-        Stop pipeline
+        Release resources
         """
-        if self.pipeline:
-            try:
-                self.pipeline.stop()
-                self.logger.info("RealSense pipeline stopped.")
-            except Exception as e:
-                self.logger.warning(f"Error stopping pipeline: {e}")
-        
-        self.pipeline = None
+        self.client = None
         self.is_initialized = False
+        self.logger.info("VideoClient released.")
 
     def start(self): 
         self.initialize()
@@ -187,10 +175,19 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     with CameraCapture() as cam:
         if cam.is_initialized:
-            f = cam.capture_frame()
-            if f is not None:
-                print(f"Captured frame: {f.shape}")
-                cv2.imwrite("rs_test.jpg", f)
-                print("Saved rs_test.jpg")
-            else:
-                print("Failed to capture frame")
+            print("Capture loop started. Press Ctrl+C to stop.")
+            try:
+                for i in range(5): # Capture 5 frames as test
+                    start_t = time.time()
+                    f = cam.capture_frame()
+                    if f is not None:
+                        print(f"Captured frame {i}: {f.shape} (Time: {time.time()-start_t:.3f}s)")
+                        if i == 0:
+                            cv2.imwrite("vc_test.jpg", f)
+                            print("Saved vc_test.jpg")
+                    else:
+                        print("Failed to capture frame")
+                    time.sleep(0.1)
+            except KeyboardInterrupt:
+                pass
+
